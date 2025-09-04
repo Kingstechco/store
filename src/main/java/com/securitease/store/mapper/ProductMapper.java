@@ -13,7 +13,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
 
-    @Mapping(target = "orderIds", expression = "java(product.getOrders().stream().map(Order::getId).toList())")
+    @Mapping(target = "orderIds", source = "orders")
     ProductDTO productToProductDTO(Product product);
 
     List<ProductDTO> productsToProductDTOs(List<Product> products);
@@ -21,4 +21,10 @@ public interface ProductMapper {
     OrderProductDTO productToOrderProductDTO(Product product);
 
     List<OrderProductDTO> productsToOrderProductDTOs(List<Product> products);
+
+    // helper
+    default List<Long> mapOrdersToIds(List<com.example.store.entity.Order> orders) {
+        return orders == null ? List.of() :
+                orders.stream().map(com.example.store.entity.Order::getId).toList();
+    }
 }

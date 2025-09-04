@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 /**
  * REST controller for cache management operations.
  * <p>
- * This controller provides administrative endpoints for cache management
+ * This controller provides administrative endpoints for cache management,
  * including cache eviction, statistics, and warmup operations. These endpoints
  * are typically used by administrators or monitoring systems.
  * </p>
@@ -33,7 +33,7 @@ public class CacheController {
     private final CacheService cacheService;
 
     /**
-     * Evicts a specific customer from cache.
+     * Evicts a specific customer from a cache.
      *
      * @param customerId the customer ID to evict
      * @return success response

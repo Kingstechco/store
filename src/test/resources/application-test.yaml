@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/store_test
+    username: test
+    password: test
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cache:
+    type: simple
+
+logging:
+  level:
+    com.securitease.store: DEBUG
+    org.springframework.web: DEBUG
+    org.testcontainers: INFO
+    root: INFO
+
+# Disable Swagger in tests
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false

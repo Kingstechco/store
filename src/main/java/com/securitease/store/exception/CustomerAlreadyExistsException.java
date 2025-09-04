@@ -18,15 +18,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class CustomerAlreadyExistsException extends RuntimeException {
 
     /**
-     * Constructs a new CustomerAlreadyExistsException with a formatted message.
-     *
-     * @param name the name of the customer that already exists
-     */
-    public CustomerAlreadyExistsException(String name) {
-        super("Customer with name '" + name + "' already exists");
-    }
-
-    /**
      * Constructs a new CustomerAlreadyExistsException with a custom message.
      *
      * @param message the detail message explaining the cause of the exception

@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -24,18 +23,12 @@ import java.util.List;
 /**
  * REST controller for managing customer resources.
  * <p>
- * This controller provides HTTP endpoints for customer operations including
- * creation, retrieval, updating, and deletion. It supports both individual
- * customer operations and batch operations with pagination. Search functionality
+ * This controller provides HTTP endpoints for all CRUD customer operations
+ * and batch operations with pagination. Search functionality
  * is available through query parameters.
  * </p>
- * <p>
- * All endpoints return appropriate HTTP status codes and use proper error handling
- * through the global exception handler. Input validation is performed using
- * Bean Validation annotations.
- * </p>
  *
- * @author Store Application
+ * @author Musa Maringa
  * @version 1.0
  * @since 1.0
  * @see CustomerService
@@ -152,7 +145,7 @@ public class CustomerController {
      *
      * @param id the unique identifier of the customer to delete
      * @return ResponseEntity with HTTP 204 No Content status
-     * @throws ResourceNotFoundException if customer with the given ID is not found
+     * @throws ResourceNotFoundException if the customer with the given ID is not found
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {

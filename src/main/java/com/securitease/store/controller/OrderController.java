@@ -24,18 +24,12 @@ import java.util.List;
 /**
  * REST controller for managing order resources.
  * <p>
- * This controller provides HTTP endpoints for order operations including
- * creation, retrieval, updating, and deletion. It handles the relationship
+ * This controller provides HTTP endpoints for CRUD order operations. It handles the relationship
  * between orders and customers, ensuring data integrity and proper validation.
  * Supports pagination and customer-specific order retrieval.
  * </p>
- * <p>
- * All endpoints return appropriate HTTP status codes and use proper error handling
- * through the global exception handler. Input validation is performed using
- * Bean Validation annotations.
- * </p>
  *
- * @author Store Application
+ * @author Musa Maringa
  * @version 1.0
  * @since 1.0
  * @see OrderService
@@ -47,6 +41,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderController {
 
+    public static final String INVALID_PAGE_SIZE = "INVALID_PAGE_SIZE";
     private final OrderService orderService;
 
     /**
@@ -66,11 +61,11 @@ public class OrderController {
      * @param pageable pagination information including page number, size, and sorting
      * @return ResponseEntity containing a page of order DTOs
      */
-    @GetMapping("/paged")
-    public ResponseEntity<Page<OrderDTO>> getOrdersPaged(Pageable pageable) {
+    @GetMapping("/getOrders")
+    public ResponseEntity<Page<OrderDTO>> getOrders(Pageable pageable) {
         // Validate pagination parameters
         if (pageable.getPageSize() > 100) {
-            throw new BusinessRuleViolationException("INVALID_PAGE_SIZE", 
+            throw new BusinessRuleViolationException(INVALID_PAGE_SIZE,
                 "Page size cannot exceed 100 items");
         }
         
@@ -83,7 +78,7 @@ public class OrderController {
      *
      * @param id the unique identifier of the order
      * @return ResponseEntity containing the order DTO
-     * @throws ResourceNotFoundException if order with the given ID is not found
+     * @throws ResourceNotFoundException if the order with the given ID is not found
      */
     @GetMapping("/{id}")
     public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long id) {
@@ -139,7 +134,7 @@ public class OrderController {
      * @param id the unique identifier of the order to update
      * @param request the order update request containing new details
      * @return ResponseEntity containing the updated order DTO
-     * @throws ResourceNotFoundException if order or customer is not found
+     * @throws ResourceNotFoundException if an order or customer is not found
      * @throws jakarta.validation.ConstraintViolationException if request validation fails
      */
     @PutMapping("/{id}")
@@ -153,7 +148,7 @@ public class OrderController {
      *
      * @param id the unique identifier of the order to delete
      * @return ResponseEntity with HTTP 204 No Content status
-     * @throws ResourceNotFoundException if order with the given ID is not found
+     * @throws ResourceNotFoundException if the order with the given ID is not found
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {

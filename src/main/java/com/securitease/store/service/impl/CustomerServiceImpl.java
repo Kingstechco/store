@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -76,7 +77,9 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional(readOnly = true)
     @Cacheable(value = CacheConfig.CUSTOMER_SEARCH_CACHE, key = "#nameQuery.toLowerCase()")
     public List<CustomerDTO> findCustomersByNameContaining(String nameQuery) {
+
         log.debug("Searching customers with name containing: {}", nameQuery);
+
         List<Customer> customers = customerRepository.findByNameContainingIgnoreCase(nameQuery);
         return customerMapper.customersToCustomerDTOs(customers);
     }
@@ -113,9 +116,11 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    @CacheEvict(value = CacheConfig.CUSTOMERS_CACHE, key = "#id")
-    @CacheEvict(value = CacheConfig.CUSTOMER_SEARCH_CACHE, allEntries = true)
-    @CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#id")
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.CUSTOMERS_CACHE, key = "#id"),
+            @CacheEvict(value = CacheConfig.CUSTOMER_SEARCH_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#id")
+    })
     public void deleteCustomer(Long id) {
         log.info("Deleting customer with id: {}", id);
 
@@ -126,4 +131,5 @@ public class CustomerServiceImpl implements CustomerService {
         customerRepository.deleteById(id);
         log.info("Successfully deleted customer with id: {}", id);
     }
+
 }

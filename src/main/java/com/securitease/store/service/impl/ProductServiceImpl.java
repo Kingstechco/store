@@ -58,6 +58,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<ProductDTO> getAllProducts() {
         log.debug("Fetching all products");
+
         List<Product> products = productRepository.findAll();
         return productMapper.productsToProductDTOs(products);
     }
@@ -66,6 +67,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Page<ProductDTO> getProducts(Pageable pageable) {
         log.debug("Fetching products with pagination: {}", pageable);
+
         Page<Product> products = productRepository.findAll(pageable);
         return products.map(productMapper::productToProductDTO);
     }
@@ -75,6 +77,7 @@ public class ProductServiceImpl implements ProductService {
     @Cacheable(value = PRODUCTS_CACHE, key = "#id")
     public Optional<ProductDTO> getProductById(Long id) {
         log.debug("Fetching product by id: {}", id);
+
         return productRepository.findById(id).map(productMapper::productToProductDTO);
     }
 
@@ -83,6 +86,7 @@ public class ProductServiceImpl implements ProductService {
     @Cacheable(value = PRODUCT_SEARCH_CACHE, key = "#description.toLowerCase()")
     public List<ProductDTO> findProductsByDescriptionContaining(String description) {
         log.debug("Searching products with description containing: {}", description);
+
         List<Product> products = productRepository.findByDescriptionContainingIgnoreCase(description);
         return productMapper.productsToProductDTOs(products);
     }
@@ -119,8 +123,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @CacheEvict(value = PRODUCTS_CACHE, key = "#id")
-    @CacheEvict(value = PRODUCT_SEARCH_CACHE, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = PRODUCTS_CACHE, key = "#id"),
+            @CacheEvict(value = PRODUCT_SEARCH_CACHE, allEntries = true)
+    })
     public void deleteProduct(Long id) {
         log.info("Deleting product with id: {}", id);
 
@@ -131,4 +137,5 @@ public class ProductServiceImpl implements ProductService {
         productRepository.deleteById(id);
         log.info("Successfully deleted product with id: {}", id);
     }
+
 }

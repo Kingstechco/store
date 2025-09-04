@@ -23,7 +23,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     List<Customer> findByNameContainingIgnoreCaseWithOrders(@Param("name") String name);
 
     /**
-     * Find customer by ID with orders eagerly loaded.
+     * Find a customer by ID with orders eagerly loaded.
      */
     @EntityGraph(attributePaths = {"orders"})
     Optional<Customer> findWithOrdersById(Long id);
