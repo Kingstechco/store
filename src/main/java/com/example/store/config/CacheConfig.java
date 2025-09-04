@@ -52,6 +52,8 @@ public class CacheConfig {
     public static final String ORDERS_CACHE = "orders";
     public static final String CUSTOMER_SEARCH_CACHE = "customer-search";
     public static final String ORDER_BY_CUSTOMER_CACHE = "orders-by-customer";
+    public static final String PRODUCTS_CACHE = "products";
+    public static final String PRODUCT_SEARCH_CACHE = "product-search";
 
     /**
      * Configures the default Redis cache configuration.
@@ -96,7 +98,13 @@ public class CacheConfig {
                 
                 // Relationship queries - medium cache time
                 .withCacheConfiguration(ORDER_BY_CUSTOMER_CACHE,
-                        cacheConfiguration().entryTtl(Duration.ofMinutes(30)));
+                        cacheConfiguration().entryTtl(Duration.ofMinutes(30)))
+                
+                // Product caches - similar to customer/order caching strategy
+                .withCacheConfiguration(PRODUCTS_CACHE,
+                        cacheConfiguration().entryTtl(Duration.ofHours(1)))
+                .withCacheConfiguration(PRODUCT_SEARCH_CACHE,
+                        cacheConfiguration().entryTtl(Duration.ofMinutes(15)));
     }
 
     /**
