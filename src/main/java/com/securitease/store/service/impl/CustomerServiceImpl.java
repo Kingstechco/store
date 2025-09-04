@@ -1,13 +1,13 @@
-package com.example.store.service.impl;
+package com.securitease.store.service.impl;
 
-import com.example.store.config.CacheConfig;
-import com.example.store.dto.CustomerDTO;
-import com.example.store.dto.CustomerRequest;
-import com.example.store.entity.Customer;
-import com.example.store.exception.ResourceNotFoundException;
-import com.example.store.mapper.CustomerMapper;
-import com.example.store.repository.CustomerRepository;
-import com.example.store.service.CustomerService;
+import com.securitease.store.config.CacheConfig;
+import com.securitease.store.dto.CustomerDTO;
+import com.securitease.store.dto.CustomerRequest;
+import com.securitease.store.entity.Customer;
+import com.securitease.store.exception.ResourceNotFoundException;
+import com.securitease.store.mapper.CustomerMapper;
+import com.securitease.store.repository.CustomerRepository;
+import com.securitease.store.service.CustomerService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,12 +26,10 @@ import java.util.Optional;
 
 /**
  * Implementation of the CustomerService interface.
- * <p>
- * This service implementation provides concrete business logic for customer management
- * operations. It uses JPA repositories for data access and MapStruct mappers for
- * entity-to-DTO conversion. All operations are transactional and include appropriate
- * logging for debugging and monitoring purposes.
- * </p>
+ *
+ * <p>This service implementation provides concrete business logic for customer management operations. It uses JPA
+ * repositories for data access and MapStruct mappers for entity-to-DTO conversion. All operations are transactional and
+ * include appropriate logging for debugging and monitoring purposes.
  *
  * @author Store Application
  * @version 1.0
@@ -70,7 +68,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Cacheable(value = CacheConfig.CUSTOMERS_CACHE, key = "#id")
     public Optional<CustomerDTO> getCustomerById(Long id) {
         log.debug("Fetching customer by id: {}", id);
-        return customerRepository.findById(id).map(customerMapper::customerToCustomerDTO);
+        return customerRepository.findWithOrdersById(id).map(customerMapper::customerToCustomerDTO);
     }
 
     @Override
@@ -80,7 +78,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         log.debug("Searching customers with name containing: {}", nameQuery);
 
-        List<Customer> customers = customerRepository.findByNameContainingIgnoreCase(nameQuery);
+        List<Customer> customers = customerRepository.findByNameContainingIgnoreCaseWithOrders(nameQuery);
         return customerMapper.customersToCustomerDTOs(customers);
     }
 
@@ -116,11 +114,12 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = CacheConfig.CUSTOMERS_CACHE, key = "#id"),
-            @CacheEvict(value = CacheConfig.CUSTOMER_SEARCH_CACHE, allEntries = true),
-            @CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#id")
-    })
+    @Caching(
+            evict = {
+                @CacheEvict(value = CacheConfig.CUSTOMERS_CACHE, key = "#id"),
+                @CacheEvict(value = CacheConfig.CUSTOMER_SEARCH_CACHE, allEntries = true),
+                @CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#id")
+            })
     public void deleteCustomer(Long id) {
         log.info("Deleting customer with id: {}", id);
 
@@ -131,5 +130,4 @@ public class CustomerServiceImpl implements CustomerService {
         customerRepository.deleteById(id);
         log.info("Successfully deleted customer with id: {}", id);
     }
-
 }
