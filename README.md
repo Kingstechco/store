@@ -2,8 +2,16 @@
 
 An enterprise-grade Spring Boot application that manages customers and orders with comprehensive REST APIs, following industry best practices and global standards.
 
-## 🚀 Version 2.0 - What's New
+## 🚀 Version 2.1 - Latest Updates
 
+### Recent Improvements (Latest Session)
+- **Spring Boot 3.5.5**: Upgraded from 3.4.2 with latest security patches and performance improvements
+- **100% Test Success**: Fixed all failing tests with proper Spring Security integration
+- **Enhanced Test Infrastructure**: Added TestContainers, security test context, and comprehensive integration tests
+- **Bug Fixes**: Resolved lazy loading issues and DTO conversion problems
+- **Code Quality**: Applied professional formatting and updated package structure to `com.securitease.store`
+
+### Version 2.0 - Foundation
 This application has been significantly enhanced with:
 - **Enterprise Architecture**: Proper service layer, SOLID principles, dependency injection
 - **REST API Best Practices**: Versioned APIs, proper HTTP status codes, Location headers
