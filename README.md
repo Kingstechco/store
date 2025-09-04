@@ -79,8 +79,11 @@ You should be able to run the service using
 The application uses Liquibase to migrate the schema. Some sample data is provided. You can create more data by reading the documentation in utils/README.md
 
 # Data model
-An order has an ID, a description, and is associated with the customer which made the order.
-A customer has an ID, a name, and 0 or more orders.
+- A **customer** has an ID, a name, and 0 or more orders.
+- An **order** has an ID, a description, is associated with a customer, and contains 1 or more products.
+- A **product** has an ID, a description, and appears in 0 or more orders.
+
+The application models a many-to-many relationship between orders and products through a junction table.
 
 # 🔌 API Endpoints
 
@@ -97,13 +100,22 @@ The application provides RESTful APIs following industry standards:
 - `DELETE /api/v1/customers/{id}` - Delete customer
 
 ### Order Endpoints
-- `GET /api/v1/orders` - Get all orders
+- `GET /api/v1/orders` - Get all orders (with products)
 - `GET /api/v1/orders/paged` - Get orders with pagination
-- `GET /api/v1/orders/{id}` - Get order by ID
+- `GET /api/v1/orders/{id}` - Get order by ID (with products)
 - `GET /api/v1/orders/customers/{customerId}` - Get orders for specific customer
 - `POST /api/v1/orders` - Create new order (returns Location header)
 - `PUT /api/v1/orders/{id}` - Update order
 - `DELETE /api/v1/orders/{id}` - Delete order
+
+### Product Endpoints
+- `GET /api/v1/products` - Get all products (with order IDs)
+- `GET /api/v1/products?description=search` - Search products by description
+- `GET /api/v1/products/paged` - Get products with pagination
+- `GET /api/v1/products/{id}` - Get product by ID (with order IDs)
+- `POST /api/v1/products` - Create new product (returns Location header)
+- `PUT /api/v1/products/{id}` - Update product
+- `DELETE /api/v1/products/{id}` - Delete product
 
 ### API Features
 - **Versioning**: All endpoints prefixed with `/api/v1/` for backward compatibility
@@ -116,8 +128,9 @@ The application provides RESTful APIs following industry standards:
 
 The API uses optimized DTOs to prevent circular references:
 - **CustomerDTO**: Customer with simplified order information (CustomerOrderDTO)
-- **OrderDTO**: Order with simplified customer information (OrderCustomerDTO)
-- **Request DTOs**: CustomerRequest and OrderRequest for create/update operations
+- **OrderDTO**: Order with simplified customer information (OrderCustomerDTO) and products (OrderProductDTO)
+- **ProductDTO**: Product with list of order IDs that contain this product
+- **Request DTOs**: CustomerRequest, OrderRequest, and ProductRequest for create/update operations
 
 ## Error Response Format
 
@@ -145,6 +158,13 @@ curl -X POST http://localhost:8080/api/v1/customers \
 curl -X POST http://localhost:8080/api/v1/orders \
   -H "Content-Type: application/json" \
   -d '{"description": "Order description", "customerId": 1}'
+```
+
+### Create Product
+```bash
+curl -X POST http://localhost:8080/api/v1/products \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Laptop Computer"}'
 ```
 
 ### Get Customers with Pagination
@@ -244,6 +264,7 @@ export DB_PASSWORD=mypassword
 1. **✅ Order by ID endpoint**: `GET /api/v1/orders/{id}`
 2. **✅ Customer search**: `GET /api/v1/customers?name=searchTerm`
 3. **✅ Performance optimizations**: Database indexes, N+1 query prevention, connection pooling
+4. **✅ Products endpoint**: Complete `/api/v1/products` API with order relationships
 
 ## ✅ Additional Enterprise Improvements
 - **Architecture**: Service layer implementation, SOLID principles
@@ -256,9 +277,6 @@ export DB_PASSWORD=mypassword
 - **Monitoring**: Health checks, metrics, logging improvements
 
 # 🚀 Future Roadmap
-
-## Pending Tasks (Future Versions)
-4. **Products Endpoint**: `/api/v1/products` with order relationships
 
 ## Suggested Enhancements
 - **Authentication**: JWT or OAuth2 implementation
