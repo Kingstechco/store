@@ -1,7 +1,7 @@
-package com.example.store.service;
+package com.securitease.store.service;
 
-import com.example.store.dto.ProductDTO;
-import com.example.store.dto.ProductRequest;
+import com.securitease.store.dto.ProductDTO;
+import com.securitease.store.dto.ProductRequest;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,11 +11,9 @@ import java.util.Optional;
 
 /**
  * Service interface for managing products.
- * <p>
- * This service provides business logic operations for product management,
- * including CRUD operations and search functionality. It handles the
- * relationship between products and orders while maintaining data integrity.
- * </p>
+ *
+ * <p>This service provides business logic operations for product management, including CRUD operations and search
+ * functionality. It handles the relationship between products and orders while maintaining data integrity.
  *
  * @author Store Application
  * @version 1.0
@@ -73,7 +71,7 @@ public interface ProductService {
      * @param id the unique identifier of the product to update
      * @param request the product update request containing new product details
      * @return the updated product DTO
-     * @throws com.example.store.exception.ResourceNotFoundException if product is not found
+     * @throws com.securitease.store.exception.ResourceNotFoundException if product is not found
      * @throws IllegalArgumentException if id or request is null, or request contains invalid data
      * @throws jakarta.validation.ConstraintViolationException if request fails validation
      */
@@ -81,12 +79,11 @@ public interface ProductService {
 
     /**
      * Deletes a product from the system.
-     * <p>
-     * This operation will remove the product from all orders that contain it.
-     * </p>
+     *
+     * <p>This operation will remove the product from all orders that contain it.
      *
      * @param id the unique identifier of the product to delete
-     * @throws com.example.store.exception.ResourceNotFoundException if product with given ID is not found
+     * @throws com.securitease.store.exception.ResourceNotFoundException if product with given ID is not found
      * @throws IllegalArgumentException if id is null
      */
     void deleteProduct(Long id);

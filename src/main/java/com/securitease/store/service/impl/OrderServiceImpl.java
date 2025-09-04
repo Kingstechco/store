@@ -1,16 +1,16 @@
-package com.example.store.service.impl;
+package com.securitease.store.service.impl;
 
-import com.example.store.config.CacheConfig;
-import com.example.store.dto.OrderDTO;
-import com.example.store.dto.OrderRequest;
-import com.example.store.entity.Customer;
-import com.example.store.entity.Order;
-import com.example.store.exception.ResourceNotFoundException;
-import com.example.store.mapper.OrderMapper;
-import com.example.store.repository.CustomerRepository;
-import com.example.store.repository.OrderRepository;
-import com.example.store.service.CacheService;
-import com.example.store.service.OrderService;
+import com.securitease.store.config.CacheConfig;
+import com.securitease.store.dto.OrderDTO;
+import com.securitease.store.dto.OrderRequest;
+import com.securitease.store.entity.Customer;
+import com.securitease.store.entity.Order;
+import com.securitease.store.exception.ResourceNotFoundException;
+import com.securitease.store.mapper.OrderMapper;
+import com.securitease.store.repository.CustomerRepository;
+import com.securitease.store.repository.OrderRepository;
+import com.securitease.store.service.CacheService;
+import com.securitease.store.service.OrderService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +29,10 @@ import java.util.Optional;
 
 /**
  * Implementation of the OrderService interface.
- * <p>
- * This service implementation provides concrete business logic for order management
- * operations. It handles the relationship between orders and customers, ensuring
- * data integrity and proper validation. Uses JPA repositories for data access
- * and MapStruct mappers for entity-to-DTO conversion.
- * </p>
+ *
+ * <p>This service implementation provides concrete business logic for order management operations. It handles the
+ * relationship between orders and customers, ensuring data integrity and proper validation. Uses JPA repositories for
+ * data access and MapStruct mappers for entity-to-DTO conversion.
  *
  * @author Store Application
  * @version 1.0
@@ -89,11 +87,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    @Caching(put = {
-        @CachePut(value = CacheConfig.ORDERS_CACHE, key = "#result.id")
-    }, evict = {
-        @CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#request.customerId")
-    })
+    @Caching(
+            put = {@CachePut(value = CacheConfig.ORDERS_CACHE, key = "#result.id")},
+            evict = {@CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#request.customerId")})
     public OrderDTO createOrder(OrderRequest request) {
         log.info("Creating new order for customer id: {}", request.getCustomerId());
 
@@ -112,12 +108,15 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    @Caching(put = {
-        @CachePut(value = CacheConfig.ORDERS_CACHE, key = "#id")
-    }, evict = {
-        @CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#request.customerId"),
-        @CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#result.customer.id", condition = "#request.customerId != #result.customer.id")
-    })
+    @Caching(
+            put = {@CachePut(value = CacheConfig.ORDERS_CACHE, key = "#id")},
+            evict = {
+                @CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#request.customerId"),
+                @CacheEvict(
+                        value = CacheConfig.ORDER_BY_CUSTOMER_CACHE,
+                        key = "#result.customer.id",
+                        condition = "#request.customerId != #result.customer.id")
+            })
     public OrderDTO updateOrder(Long id, OrderRequest request) {
         log.info("Updating order with id: {}", id);
 
@@ -147,12 +146,11 @@ public class OrderServiceImpl implements OrderService {
     public void deleteOrder(Long id) {
         log.info("Deleting order with id: {}", id);
 
-        // First get the order to know which customer's cache to evict
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
-        
+        // First, get the order to know which customer's cache to evict
+        Order order = orderRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
+
         Long customerId = order.getCustomer().getId();
-        
+
         orderRepository.deleteById(id);
         log.info("Successfully deleted order with id: {}", id);
 

@@ -1,4 +1,4 @@
-package com.example.store.exception;
+package com.securitease.store.exception;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,19 +16,18 @@ import java.util.Map;
 
 /**
  * Global exception handler for the Store application.
- * <p>
- * This class provides centralized exception handling across the entire application
- * using Spring's {@code @RestControllerAdvice}. It handles specific exceptions
- * and converts them into appropriate HTTP responses with consistent error formats.
- * </p>
- * <p>
- * Supported exception types:
+ *
+ * <p>This class provides centralized exception handling across the entire application using Spring's
+ * {@code @RestControllerAdvice}. It handles specific exceptions and converts them into appropriate HTTP responses with
+ * consistent error formats.
+ *
+ * <p>Supported exception types:
+ *
  * <ul>
- *   <li>{@link ResourceNotFoundException} - Returns 404 Not Found</li>
- *   <li>{@link MethodArgumentNotValidException} - Returns 400 Bad Request with validation details</li>
- *   <li>Generic {@link Exception} - Returns 500 Internal Server Error</li>
+ *   <li>{@link ResourceNotFoundException} - Returns 404 Not Found
+ *   <li>{@link MethodArgumentNotValidException} - Returns 400 Bad Request with validation details
+ *   <li>Generic {@link Exception} - Returns 500 Internal Server Error
  * </ul>
- * </p>
  *
  * @author Store Application
  * @version 1.0
@@ -54,10 +53,10 @@ public class GlobalExceptionHandler {
         log.error("Resource not found: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(), 
-                "RESOURCE_NOT_FOUND", 
-                ex.getMessage(), 
-                LocalDateTime.now(), 
+                HttpStatus.NOT_FOUND.value(),
+                "RESOURCE_NOT_FOUND",
+                ex.getMessage(),
+                LocalDateTime.now(),
                 request.getDescription(false));
 
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
@@ -135,10 +134,9 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles all unhandled exceptions and returns a 500 Internal Server Error response.
-     * <p>
-     * This is a catch-all handler for any exceptions not specifically handled by other methods.
-     * It ensures that no exception goes unhandled and provides a consistent error response format.
-     * </p>
+     *
+     * <p>This is a catch-all handler for any exceptions not specifically handled by other methods. It ensures that no
+     * exception goes unhandled and provides a consistent error response format.
      *
      * @param ex the unhandled exception
      * @param request the web request that triggered the exception

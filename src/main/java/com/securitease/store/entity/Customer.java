@@ -1,4 +1,4 @@
-package com.example.store.entity;
+package com.securitease.store.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "customer", indexes = {
-    @Index(name = "idx_customer_name", columnList = "name")
-})
+@Table(
+        name = "customer",
+        indexes = {@Index(name = "idx_customer_name", columnList = "name")})
 @Getter
 @Setter
 @NoArgsConstructor

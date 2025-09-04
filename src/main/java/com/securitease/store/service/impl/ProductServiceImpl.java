@@ -1,14 +1,13 @@
-package com.example.store.service.impl;
+package com.securitease.store.service.impl;
 
-import com.example.store.config.CacheConfig;
-import com.example.store.dto.ProductDTO;
-import com.example.store.dto.ProductRequest;
-import com.example.store.entity.Product;
-import com.example.store.exception.ResourceNotFoundException;
-import com.example.store.mapper.ProductMapper;
-import com.example.store.repository.ProductRepository;
-import com.example.store.service.CacheService;
-import com.example.store.service.ProductService;
+import com.securitease.store.dto.ProductDTO;
+import com.securitease.store.dto.ProductRequest;
+import com.securitease.store.entity.Product;
+import com.securitease.store.exception.ResourceNotFoundException;
+import com.securitease.store.mapper.ProductMapper;
+import com.securitease.store.repository.ProductRepository;
+import com.securitease.store.service.CacheService;
+import com.securitease.store.service.ProductService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,12 +26,10 @@ import java.util.Optional;
 
 /**
  * Implementation of the ProductService interface.
- * <p>
- * This service implementation provides concrete business logic for product management
- * operations. It handles the relationship between products and orders, ensuring
- * data integrity and proper validation. Uses JPA repositories for data access
- * and MapStruct mappers for entity-to-DTO conversion.
- * </p>
+ *
+ * <p>This service implementation provides concrete business logic for product management operations. It handles the
+ * relationship between products and orders, ensuring data integrity and proper validation. Uses JPA repositories for
+ * data access and MapStruct mappers for entity-to-DTO conversion.
  *
  * @author Store Application
  * @version 1.0
@@ -112,8 +109,8 @@ public class ProductServiceImpl implements ProductService {
     public ProductDTO updateProduct(Long id, ProductRequest request) {
         log.info("Updating product with id: {}", id);
 
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+        Product product =
+                productRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
 
         product.setDescription(request.getDescription());
         Product updatedProduct = productRepository.save(product);
@@ -123,10 +120,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = PRODUCTS_CACHE, key = "#id"),
-            @CacheEvict(value = PRODUCT_SEARCH_CACHE, allEntries = true)
-    })
+    @Caching(
+            evict = {
+                @CacheEvict(value = PRODUCTS_CACHE, key = "#id"),
+                @CacheEvict(value = PRODUCT_SEARCH_CACHE, allEntries = true)
+            })
     public void deleteProduct(Long id) {
         log.info("Deleting product with id: {}", id);
 
@@ -137,5 +135,4 @@ public class ProductServiceImpl implements ProductService {
         productRepository.deleteById(id);
         log.info("Successfully deleted product with id: {}", id);
     }
-
 }

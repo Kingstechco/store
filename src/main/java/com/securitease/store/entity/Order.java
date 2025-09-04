@@ -1,27 +1,27 @@
-package com.example.store.entity;
+package com.securitease.store.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "\"order\"", indexes = {
-    @Index(name = "idx_order_customer_id", columnList = "customer_id"),
-    @Index(name = "idx_order_description", columnList = "description")
-})
+@Table(
+        name = "orders", // ✅ avoid reserved keyword
+        indexes = {
+            @Index(name = "idx_order_customer_id", columnList = "customer_id"),
+            @Index(name = "idx_order_description", columnList = "description")
+        })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder // convenient for test data or factory-style creation
 public class Order {
 
     @Id
@@ -33,16 +33,18 @@ public class Order {
     @Column(nullable = false)
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @Builder.Default // ensures list is initialized even when using builder
+    @ManyToMany(
+            fetch = FetchType.LAZY,
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
-        name = "order_product",
-        joinColumns = @JoinColumn(name = "order_id"),
-        inverseJoinColumns = @JoinColumn(name = "product_id")
-    )
+            name = "order_product",
+            joinColumns = @JoinColumn(name = "order_id"),
+            inverseJoinColumns = @JoinColumn(name = "product_id"))
     private List<Product> products = new ArrayList<>();
 
     public Order(String description, Customer customer) {
@@ -53,8 +55,8 @@ public class Order {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Order order)) return false;
-        return Objects.equals(id, order.id);
+        if (!(o instanceof Order other)) return false;
+        return Objects.equals(id, other.id);
     }
 
     @Override

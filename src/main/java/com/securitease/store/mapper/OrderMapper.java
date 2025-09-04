@@ -1,15 +1,17 @@
-package com.example.store.mapper;
+package com.securitease.store.mapper;
 
-import com.example.store.dto.OrderCustomerDTO;
-import com.example.store.dto.OrderDTO;
-import com.example.store.entity.Customer;
-import com.example.store.entity.Order;
+import com.securitease.store.dto.OrderCustomerDTO;
+import com.securitease.store.dto.OrderDTO;
+import com.securitease.store.entity.Customer;
+import com.securitease.store.entity.Order;
 
 import org.mapstruct.Mapper;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {ProductMapper.class})
+@Mapper(
+        componentModel = "spring",
+        uses = {ProductMapper.class})
 public interface OrderMapper {
     OrderDTO orderToOrderDTO(Order order);
 

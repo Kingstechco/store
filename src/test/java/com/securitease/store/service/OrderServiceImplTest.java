@@ -10,6 +10,7 @@ import com.securitease.store.mapper.OrderMapper;
 import com.securitease.store.repository.CustomerRepository;
 import com.securitease.store.repository.OrderRepository;
 import com.securitease.store.service.impl.OrderServiceImpl;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,10 +29,17 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OrderServiceImplTest {
 
-    @Mock OrderRepository orderRepository;
-    @Mock CustomerRepository customerRepository;
-    @Mock OrderMapper orderMapper;
-    @Mock CacheService cacheService;
+    @Mock
+    OrderRepository orderRepository;
+
+    @Mock
+    CustomerRepository customerRepository;
+
+    @Mock
+    OrderMapper orderMapper;
+
+    @Mock
+    CacheService cacheService;
 
     @InjectMocks
     OrderServiceImpl service;
@@ -102,8 +110,7 @@ class OrderServiceImplTest {
     @DisplayName("getAllOrders returns mapped list with nested customer")
     void getAllOrders_ok() {
         when(orderRepository.findAll()).thenReturn(List.of(order1, order2));
-        when(orderMapper.ordersToOrderDTOs(List.of(order1, order2)))
-                .thenReturn(List.of(orderDTO1, orderDTO2));
+        when(orderMapper.ordersToOrderDTOs(List.of(order1, order2))).thenReturn(List.of(orderDTO1, orderDTO2));
 
         var result = service.getAllOrders();
 
@@ -164,13 +171,11 @@ class OrderServiceImplTest {
     @DisplayName("getOrdersByCustomerId returns mapped list")
     void getOrdersByCustomerId_ok() {
         when(orderRepository.findByCustomerId(10L)).thenReturn(List.of(order1, order2));
-        when(orderMapper.ordersToOrderDTOs(List.of(order1, order2)))
-                .thenReturn(List.of(orderDTO1, orderDTO2));
+        when(orderMapper.ordersToOrderDTOs(List.of(order1, order2))).thenReturn(List.of(orderDTO1, orderDTO2));
 
         var res = service.getOrdersByCustomerId(10L);
 
-        assertThat(res).extracting(d -> d.getCustomer().getId())
-                .containsExactly(10L, 10L);
+        assertThat(res).extracting(d -> d.getCustomer().getId()).containsExactly(10L, 10L);
         verify(orderRepository).findByCustomerId(10L);
         verify(orderMapper).ordersToOrderDTOs(List.of(order1, order2));
     }
@@ -248,7 +253,7 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("updateOrder updates fields when customer unchanged")
     void updateOrder_sameCustomer_ok() {
-        when(orderRepository.findById(1L)).thenReturn(Optional.of(order1));             // old customer: 10
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order1)); // old customer: 10
         when(customerRepository.findById(10L)).thenReturn(Optional.of(customer1));
 
         Order saved = new Order();
@@ -270,8 +275,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("updateOrder updates and maps when customer changed")
     void updateOrder_customerChanged_ok() {
-        when(orderRepository.findById(1L)).thenReturn(Optional.of(order1));            // old customer: 10
-        when(customerRepository.findById(20L)).thenReturn(Optional.of(customer2));     // new customer: 20
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order1)); // old customer: 10
+        when(customerRepository.findById(20L)).thenReturn(Optional.of(customer2)); // new customer: 20
 
         Order saved = new Order();
         saved.setId(1L);

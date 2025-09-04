@@ -1,10 +1,10 @@
-package com.example.store.controller;
+package com.securitease.store.controller;
 
-import com.example.store.dto.ProductDTO;
-import com.example.store.dto.ProductRequest;
-import com.example.store.exception.BusinessRuleViolationException;
-import com.example.store.exception.ResourceNotFoundException;
-import com.example.store.service.ProductService;
+import com.securitease.store.dto.ProductDTO;
+import com.securitease.store.dto.ProductRequest;
+import com.securitease.store.exception.BusinessRuleViolationException;
+import com.securitease.store.exception.ResourceNotFoundException;
+import com.securitease.store.service.ProductService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -23,17 +22,13 @@ import java.util.List;
 
 /**
  * REST controller for managing product resources.
- * <p>
- * This controller provides HTTP endpoints for product operations including
- * creation, retrieval, updating, and deletion. It supports both individual
- * product operations and batch operations with pagination. Search functionality
+ *
+ * <p>This controller provides HTTP endpoints for product operations including creation, retrieval, updating, and
+ * deletion. It supports both individual product operations and batch operations with pagination. Search functionality
  * is available through query parameters.
- * </p>
- * <p>
- * All endpoints return appropriate HTTP status codes and use proper error handling
- * through the global exception handler. Input validation is performed using
- * Bean Validation annotations.
- * </p>
+ *
+ * <p>All endpoints return appropriate HTTP status codes and use proper error handling through the global exception
+ * handler. Input validation is performed using Bean Validation annotations.
  *
  * @author Store Application
  * @version 1.0
@@ -51,11 +46,9 @@ public class ProductController {
 
     /**
      * Retrieves all products or searches products by description.
-     * <p>
-     * If the 'description' parameter is provided, performs a case-insensitive search
-     * for products whose descriptions contain the specified string. Otherwise,
-     * returns all products in the system with their associated order IDs.
-     * </p>
+     *
+     * <p>If the 'description' parameter is provided, performs a case-insensitive search for products whose descriptions
+     * contain the specified string. Otherwise, returns all products in the system with their associated order IDs.
      *
      * @param description optional search parameter to filter products by description
      * @return ResponseEntity containing a list of matching product DTOs with order IDs
@@ -83,10 +76,9 @@ public class ProductController {
     public ResponseEntity<Page<ProductDTO>> getProductsPaged(Pageable pageable) {
         // Validate pagination parameters
         if (pageable.getPageSize() > 100) {
-            throw new BusinessRuleViolationException("INVALID_PAGE_SIZE", 
-                "Page size cannot exceed 100 items");
+            throw new BusinessRuleViolationException("INVALID_PAGE_SIZE", "Page size cannot exceed 100 items");
         }
-        
+
         Page<ProductDTO> products = productService.getProducts(pageable);
         return ResponseEntity.ok(products);
     }
@@ -100,9 +92,8 @@ public class ProductController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
-        ProductDTO product = productService
-                .getProductById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+        ProductDTO product =
+                productService.getProductById(id).orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
         return ResponseEntity.ok(product);
     }
 
@@ -115,16 +106,15 @@ public class ProductController {
      * @throws jakarta.validation.ConstraintViolationException if request validation fails
      */
     @PostMapping
-    public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductRequest request, 
-                                                   HttpServletRequest httpRequest) {
+    public ResponseEntity<ProductDTO> createProduct(
+            @Valid @RequestBody ProductRequest request, HttpServletRequest httpRequest) {
         ProductDTO product = productService.createProduct(request);
-        
-        URI location = ServletUriComponentsBuilder
-                .fromRequestUri(httpRequest)
+
+        URI location = ServletUriComponentsBuilder.fromRequestUri(httpRequest)
                 .path("/{id}")
                 .buildAndExpand(product.getId())
                 .toUri();
-                
+
         return ResponseEntity.created(location).body(product);
     }
 
@@ -138,17 +128,15 @@ public class ProductController {
      * @throws jakarta.validation.ConstraintViolationException if request validation fails
      */
     @PutMapping("/{id}")
-    public ResponseEntity<ProductDTO> updateProduct(
-            @PathVariable Long id, @Valid @RequestBody ProductRequest request) {
+    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
         ProductDTO product = productService.updateProduct(id, request);
         return ResponseEntity.ok(product);
     }
 
     /**
      * Deletes a product from the system.
-     * <p>
-     * This operation will remove the product from all orders that contain it.
-     * </p>
+     *
+     * <p>This operation will remove the product from all orders that contain it.
      *
      * @param id the unique identifier of the product to delete
      * @return ResponseEntity with HTTP 204 No Content status

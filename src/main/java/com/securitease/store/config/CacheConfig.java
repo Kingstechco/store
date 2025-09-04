@@ -1,8 +1,7 @@
-package com.example.store.config;
+package com.securitease.store.config;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
@@ -21,21 +20,19 @@ import java.time.Duration;
 
 /**
  * Redis cache configuration for the Store application.
- * <p>
- * This configuration sets up Redis as the caching provider with optimized
- * serialization, TTL settings, and cache-specific configurations. It enables
- * transparent caching of frequently accessed data to improve application
+ *
+ * <p>This configuration sets up Redis as the caching provider with optimized serialization, TTL settings, and
+ * cache-specific configurations. It enables transparent caching of frequently accessed data to improve application
  * performance by reducing database queries.
- * </p>
- * <p>
- * Key Features:
+ *
+ * <p>Key Features:
+ *
  * <ul>
- *   <li>JSON serialization for human-readable cache entries</li>
- *   <li>Configurable TTL per cache</li>
- *   <li>Type-safe serialization with Jackson</li>
- *   <li>Optimized for DTO objects</li>
+ *   <li>JSON serialization for human-readable cache entries
+ *   <li>Configurable TTL per cache
+ *   <li>Type-safe serialization with Jackson
+ *   <li>Optimized for DTO objects
  * </ul>
- * </p>
  *
  * @author Store Application
  * @version 1.0
@@ -45,10 +42,9 @@ import java.time.Duration;
 @EnableCaching
 public class CacheConfig {
 
-    /**
-     * Cache names used throughout the application.
-     */
+    /** Cache names used throughout the application. */
     public static final String CUSTOMERS_CACHE = "customers";
+
     public static final String ORDERS_CACHE = "orders";
     public static final String CUSTOMER_SEARCH_CACHE = "customer-search";
     public static final String ORDER_BY_CUSTOMER_CACHE = "orders-by-customer";
@@ -65,16 +61,16 @@ public class CacheConfig {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.activateDefaultTyping(
-                objectMapper.getPolymorphicTypeValidator(), 
-                ObjectMapper.DefaultTyping.NON_FINAL, 
+                objectMapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY);
 
         return RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(30)) // Default TTL of 30 minutes
-                .serializeKeysWith(RedisSerializationContext.SerializationPair
-                        .fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair
-                        .fromSerializer(new GenericJackson2JsonRedisSerializer(objectMapper)))
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
+                        new GenericJackson2JsonRedisSerializer(objectMapper)))
                 .disableCachingNullValues(); // Don't cache null values
     }
 
@@ -87,24 +83,21 @@ public class CacheConfig {
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
         return builder -> builder
                 // Individual customer/order records - cache longer as they change less frequently
-                .withCacheConfiguration(CUSTOMERS_CACHE,
-                        cacheConfiguration().entryTtl(Duration.ofHours(1)))
-                .withCacheConfiguration(ORDERS_CACHE,
-                        cacheConfiguration().entryTtl(Duration.ofHours(1)))
-                
+                .withCacheConfiguration(CUSTOMERS_CACHE, cacheConfiguration().entryTtl(Duration.ofHours(1)))
+                .withCacheConfiguration(ORDERS_CACHE, cacheConfiguration().entryTtl(Duration.ofHours(1)))
+
                 // Search results - cache shorter as they're more dynamic
-                .withCacheConfiguration(CUSTOMER_SEARCH_CACHE,
-                        cacheConfiguration().entryTtl(Duration.ofMinutes(15)))
-                
+                .withCacheConfiguration(
+                        CUSTOMER_SEARCH_CACHE, cacheConfiguration().entryTtl(Duration.ofMinutes(15)))
+
                 // Relationship queries - medium cache time
-                .withCacheConfiguration(ORDER_BY_CUSTOMER_CACHE,
-                        cacheConfiguration().entryTtl(Duration.ofMinutes(30)))
-                
+                .withCacheConfiguration(
+                        ORDER_BY_CUSTOMER_CACHE, cacheConfiguration().entryTtl(Duration.ofMinutes(30)))
+
                 // Product caches - similar to customer/order caching strategy
-                .withCacheConfiguration(PRODUCTS_CACHE,
-                        cacheConfiguration().entryTtl(Duration.ofHours(1)))
-                .withCacheConfiguration(PRODUCT_SEARCH_CACHE,
-                        cacheConfiguration().entryTtl(Duration.ofMinutes(15)));
+                .withCacheConfiguration(PRODUCTS_CACHE, cacheConfiguration().entryTtl(Duration.ofHours(1)))
+                .withCacheConfiguration(
+                        PRODUCT_SEARCH_CACHE, cacheConfiguration().entryTtl(Duration.ofMinutes(15)));
     }
 
     /**
@@ -117,11 +110,11 @@ public class CacheConfig {
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        
+
         // Use String serializer for keys
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
-        
+
         // Use JSON serializer for values
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -129,13 +122,12 @@ public class CacheConfig {
                 objectMapper.getPolymorphicTypeValidator(),
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY);
-        
-        Jackson2JsonRedisSerializer<Object> serializer = 
-                new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
-        
+
+        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
+
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
-        
+
         template.afterPropertiesSet();
         return template;
     }

@@ -1,9 +1,8 @@
-package com.example.store.mapper;
+package com.securitease.store.mapper;
 
-import com.example.store.dto.OrderProductDTO;
-import com.example.store.dto.ProductDTO;
-import com.example.store.entity.Order;
-import com.example.store.entity.Product;
+import com.securitease.store.dto.OrderProductDTO;
+import com.securitease.store.dto.ProductDTO;
+import com.securitease.store.entity.Product;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -23,8 +22,9 @@ public interface ProductMapper {
     List<OrderProductDTO> productsToOrderProductDTOs(List<Product> products);
 
     // helper
-    default List<Long> mapOrdersToIds(List<com.example.store.entity.Order> orders) {
-        return orders == null ? List.of() :
-                orders.stream().map(com.example.store.entity.Order::getId).toList();
+    default List<Long> mapOrdersToIds(List<com.securitease.store.entity.Order> orders) {
+        return orders == null
+                ? List.of()
+                : orders.stream().map(com.securitease.store.entity.Order::getId).toList();
     }
 }

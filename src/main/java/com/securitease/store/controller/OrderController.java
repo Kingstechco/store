@@ -1,33 +1,30 @@
-package com.example.store.controller;
+package com.securitease.store.controller;
 
-import com.example.store.dto.OrderDTO;
-import com.example.store.dto.OrderRequest;
-import com.example.store.exception.BusinessRuleViolationException;
-import com.example.store.exception.ResourceNotFoundException;
-import com.example.store.service.OrderService;
+import com.securitease.store.dto.OrderDTO;
+import com.securitease.store.dto.OrderRequest;
+import com.securitease.store.exception.BusinessRuleViolationException;
+import com.securitease.store.exception.ResourceNotFoundException;
+import com.securitease.store.service.OrderService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.List;
 
 /**
  * REST controller for managing order resources.
- * <p>
- * This controller provides HTTP endpoints for CRUD order operations. It handles the relationship
- * between orders and customers, ensuring data integrity and proper validation.
- * Supports pagination and customer-specific order retrieval.
- * </p>
+ *
+ * <p>This controller provides HTTP endpoints for CRUD order operations. It handles the relationship between orders and
+ * customers, ensuring data integrity and proper validation. Supports pagination and customer-specific order retrieval.
  *
  * @author Musa Maringa
  * @version 1.0
@@ -65,10 +62,9 @@ public class OrderController {
     public ResponseEntity<Page<OrderDTO>> getOrders(Pageable pageable) {
         // Validate pagination parameters
         if (pageable.getPageSize() > 100) {
-            throw new BusinessRuleViolationException(INVALID_PAGE_SIZE,
-                "Page size cannot exceed 100 items");
+            throw new BusinessRuleViolationException(INVALID_PAGE_SIZE, "Page size cannot exceed 100 items");
         }
-        
+
         Page<OrderDTO> orders = orderService.getOrders(pageable);
         return ResponseEntity.ok(orders);
     }
@@ -101,9 +97,8 @@ public class OrderController {
 
     /**
      * Creates a new order.
-     * <p>
-     * The order will be associated with the customer specified in the request.
-     * </p>
+     *
+     * <p>The order will be associated with the customer specified in the request.
      *
      * @param request the order creation request containing order details and customer ID
      * @param httpRequest the HTTP servlet request used to build the location header
@@ -112,24 +107,22 @@ public class OrderController {
      * @throws jakarta.validation.ConstraintViolationException if request validation fails
      */
     @PostMapping
-    public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody OrderRequest request,
-                                               HttpServletRequest httpRequest) {
+    public ResponseEntity<OrderDTO> createOrder(
+            @Valid @RequestBody OrderRequest request, HttpServletRequest httpRequest) {
         OrderDTO order = orderService.createOrder(request);
-        
-        URI location = ServletUriComponentsBuilder
-                .fromRequestUri(httpRequest)
+
+        URI location = ServletUriComponentsBuilder.fromRequestUri(httpRequest)
                 .path("/{id}")
                 .buildAndExpand(order.getId())
                 .toUri();
-                
+
         return ResponseEntity.created(location).body(order);
     }
 
     /**
      * Updates an existing order's information.
-     * <p>
-     * This can include changing the order description and/or reassigning it to a different customer.
-     * </p>
+     *
+     * <p>This can include changing the order description and/or reassigning it to a different customer.
      *
      * @param id the unique identifier of the order to update
      * @param request the order update request containing new details

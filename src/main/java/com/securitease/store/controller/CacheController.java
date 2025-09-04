@@ -1,6 +1,6 @@
-package com.example.store.controller;
+package com.securitease.store.controller;
 
-import com.example.store.service.CacheService;
+import com.securitease.store.service.CacheService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -10,15 +10,12 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * REST controller for cache management operations.
- * <p>
- * This controller provides administrative endpoints for cache management,
- * including cache eviction, statistics, and warmup operations. These endpoints
- * are typically used by administrators or monitoring systems.
- * </p>
- * <p>
- * Note: This controller is only enabled when cache management is explicitly
- * enabled via configuration to prevent accidental exposure in production.
- * </p>
+ *
+ * <p>This controller provides administrative endpoints for cache management, including cache eviction, statistics, and
+ * warmup operations. These endpoints are typically used by administrators or monitoring systems.
+ *
+ * <p>Note: This controller is only enabled when cache management is explicitly enabled via configuration to prevent
+ * accidental exposure in production.
  *
  * @author Store Application
  * @version 1.0

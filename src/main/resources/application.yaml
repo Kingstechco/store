@@ -1,6 +1,9 @@
+server:
+  port: 8081
+
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/store
+    url: jdbc:postgresql://localhost:5432/store
     username: admin
     password: admin
   jpa:
@@ -27,3 +30,13 @@ spring:
           max-wait: -1ms
   cache:
     type: redis
+
+# OpenAPI/Swagger Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    disable-swagger-default-url: true
+  show-actuator: true

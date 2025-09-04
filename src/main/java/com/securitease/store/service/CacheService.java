@@ -1,6 +1,6 @@
-package com.example.store.service;
+package com.securitease.store.service;
 
-import com.example.store.config.CacheConfig;
+import com.securitease.store.config.CacheConfig;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,12 +12,10 @@ import java.util.Objects;
 
 /**
  * Service for manual cache management operations.
- * <p>
- * This service provides methods for manual cache eviction, cache statistics,
- * and complex cache operations that cannot be handled by simple annotations.
- * It's particularly useful for scenarios where conditional cache eviction
- * or bulk operations are needed.
- * </p>
+ *
+ * <p>This service provides methods for manual cache eviction, cache statistics, and complex cache operations that
+ * cannot be handled by simple annotations. It's particularly useful for scenarios where conditional cache eviction or
+ * bulk operations are needed.
  *
  * @author Store Application
  * @version 1.0
@@ -69,10 +67,7 @@ public class CacheService {
         }
     }
 
-    /**
-     * Clears all customer search results cache.
-     * Useful when customer data changes that might affect search results.
-     */
+    /** Clears all customer search results cache. Useful when customer data changes that might affect search results. */
     public void evictAllCustomerSearches() {
         Objects.requireNonNull(cacheManager.getCache(CacheConfig.CUSTOMER_SEARCH_CACHE))
                 .clear();
@@ -80,8 +75,8 @@ public class CacheService {
     }
 
     /**
-     * Clears all caches. Use with caution in production.
-     * This should typically only be used in development or emergency situations.
+     * Clears all caches. Use with caution in production. This should typically only be used in development or emergency
+     * situations.
      */
     public void evictAllCaches() {
         cacheManager.getCacheNames().forEach(cacheName -> {
@@ -92,9 +87,9 @@ public class CacheService {
     }
 
     /**
-     * Warms up the cache by pre-loading frequently accessed data.
-     * This method can be called during application startup or scheduled maintenance.
-     * 
+     * Warms up the cache by pre-loading frequently accessed data. This method can be called during application startup
+     * or scheduled maintenance.
+     *
      * @implNote In a real implementation, this would load top customers, recent orders, etc.
      */
     public void warmupCache() {

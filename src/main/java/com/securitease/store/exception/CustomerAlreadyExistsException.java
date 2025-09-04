@@ -1,14 +1,13 @@
-package com.example.store.exception;
+package com.securitease.store.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * Exception thrown when attempting to create a customer that already exists.
- * <p>
- * This exception is used in business logic scenarios where duplicate customers
- * are not allowed based on business rules such as unique names or email addresses.
- * </p>
+ *
+ * <p>This exception is used in business logic scenarios where duplicate customers are not allowed based on business
+ * rules such as unique names or email addresses.
  *
  * @author Store Application
  * @version 1.0

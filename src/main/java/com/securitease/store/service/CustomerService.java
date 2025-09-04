@@ -1,7 +1,7 @@
-package com.example.store.service;
+package com.securitease.store.service;
 
-import com.example.store.dto.CustomerDTO;
-import com.example.store.dto.CustomerRequest;
+import com.securitease.store.dto.CustomerDTO;
+import com.securitease.store.dto.CustomerRequest;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,11 +11,9 @@ import java.util.Optional;
 
 /**
  * Service interface for managing customers.
- * <p>
- * This service provides business logic operations for customer management,
- * including CRUD operations and search functionality. It serves as an abstraction
- * layer between the controller and data access layers.
- * </p>
+ *
+ * <p>This service provides business logic operations for customer management, including CRUD operations and search
+ * functionality. It serves as an abstraction layer between the controller and data access layers.
  *
  * @author Store Application
  * @version 1.0
@@ -49,8 +47,8 @@ public interface CustomerService {
     Optional<CustomerDTO> getCustomerById(Long id);
 
     /**
-     * Searches for customers whose names contain the specified query string.
-     * The search is case-insensitive and matches partial names.
+     * Searches for customers whose names contain the specified query string. The search is case-insensitive and matches
+     * partial names.
      *
      * @param nameQuery the search query string to match against customer names
      * @return a list of customer DTOs matching the search criteria, or an empty list if none found
@@ -74,18 +72,17 @@ public interface CustomerService {
      * @param id the unique identifier of the customer to update
      * @param request the customer update request containing new customer details
      * @return the updated customer DTO
-     * @throws com.example.store.exception.ResourceNotFoundException if customer with given ID is not found
+     * @throws com.securitease.store.exception.ResourceNotFoundException if customer with given ID is not found
      * @throws IllegalArgumentException if id or request is null, or request contains invalid data
      * @throws jakarta.validation.ConstraintViolationException if request fails validation
      */
     CustomerDTO updateCustomer(Long id, CustomerRequest request);
 
     /**
-     * Deletes a customer from the system.
-     * This operation will also cascade delete all associated orders.
+     * Deletes a customer from the system. This operation will also cascade delete all associated orders.
      *
      * @param id the unique identifier of the customer to delete
-     * @throws com.example.store.exception.ResourceNotFoundException if customer with given ID is not found
+     * @throws com.securitease.store.exception.ResourceNotFoundException if customer with given ID is not found
      * @throws IllegalArgumentException if id is null
      */
     void deleteCustomer(Long id);

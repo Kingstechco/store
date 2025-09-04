@@ -1,4 +1,4 @@
-package com.example.store.exception;
+package com.securitease.store.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,11 +8,10 @@ import java.time.LocalDateTime;
 
 /**
  * Standard error response structure for REST API endpoints.
- * <p>
- * This class provides a consistent format for error responses across the application.
- * It includes essential information about the error including HTTP status code,
- * error message, timestamp, and the request path that caused the error.
- * </p>
+ *
+ * <p>This class provides a consistent format for error responses across the application. It includes essential
+ * information about the error including HTTP status code, error message, timestamp, and the request path that caused
+ * the error.
  *
  * @author Store Application
  * @version 1.0

@@ -32,7 +32,7 @@ This README assumes you're using a posix environment. It's possible to run this 
 # Prerequisites
 
 ## Database (PostgreSQL)
-This service requires a PostgreSQL 16.2 database server running on localhost:5433 (note the non-standard port)
+This service requires a PostgreSQL 16.2 database server running on localhost:5432
 - Username: `admin`
 - Password: `admin` 
 - Database: `store`
@@ -46,7 +46,7 @@ docker run -d \
   -e POSTGRES_PASSWORD=admin \
   -e POSTGRES_DB=store \
   -v postgres:/var/lib/postgresql/data \
-  -p 5433:5432 \
+  -p 5432:5432 \
   postgres:16.2 \
   postgres -c wal_level=logical
 ```

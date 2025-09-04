@@ -1,7 +1,7 @@
-package com.example.store.mapper;
+package com.securitease.store.mapper;
 
-import com.example.store.dto.CustomerDTO;
-import com.example.store.entity.Customer;
+import com.securitease.store.dto.CustomerDTO;
+import com.securitease.store.entity.Customer;
 
 import org.mapstruct.Mapper;
 

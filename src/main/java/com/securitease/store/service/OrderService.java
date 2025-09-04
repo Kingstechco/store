@@ -1,7 +1,7 @@
-package com.example.store.service;
+package com.securitease.store.service;
 
-import com.example.store.dto.OrderDTO;
-import com.example.store.dto.OrderRequest;
+import com.securitease.store.dto.OrderDTO;
+import com.securitease.store.dto.OrderRequest;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,11 +11,10 @@ import java.util.Optional;
 
 /**
  * Service interface for managing orders.
- * <p>
- * This service provides business logic operations for order management,
- * including CRUD operations and customer-specific order retrieval. It handles
- * the relationship between orders and customers while maintaining data integrity.
- * </p>
+ *
+ * <p>This service provides business logic operations for order management, including CRUD operations and
+ * customer-specific order retrieval. It handles the relationship between orders and customers while maintaining data
+ * integrity.
  *
  * @author Store Application
  * @version 1.0
@@ -58,25 +57,24 @@ public interface OrderService {
     List<OrderDTO> getOrdersByCustomerId(Long customerId);
 
     /**
-     * Creates a new order in the system.
-     * The order will be associated with the customer specified in the request.
+     * Creates a new order in the system. The order will be associated with the customer specified in the request.
      *
      * @param request the order creation request containing order details and customer ID
      * @return the created order DTO with assigned ID
-     * @throws com.example.store.exception.ResourceNotFoundException if the specified customer is not found
+     * @throws com.securitease.store.exception.ResourceNotFoundException if the specified customer is not found
      * @throws IllegalArgumentException if request is null or contains invalid data
      * @throws jakarta.validation.ConstraintViolationException if request fails validation
      */
     OrderDTO createOrder(OrderRequest request);
 
     /**
-     * Updates an existing order's information.
-     * This can include changing the order description and/or reassigning it to a different customer.
+     * Updates an existing order's information. This can include changing the order description and/or reassigning it to
+     * a different customer.
      *
      * @param id the unique identifier of the order to update
      * @param request the order update request containing new order details
      * @return the updated order DTO
-     * @throws com.example.store.exception.ResourceNotFoundException if order or customer is not found
+     * @throws com.securitease.store.exception.ResourceNotFoundException if order or customer is not found
      * @throws IllegalArgumentException if id or request is null, or request contains invalid data
      * @throws jakarta.validation.ConstraintViolationException if request fails validation
      */
@@ -86,7 +84,7 @@ public interface OrderService {
      * Deletes an order from the system.
      *
      * @param id the unique identifier of the order to delete
-     * @throws com.example.store.exception.ResourceNotFoundException if order with given ID is not found
+     * @throws com.securitease.store.exception.ResourceNotFoundException if order with given ID is not found
      * @throws IllegalArgumentException if id is null
      */
     void deleteOrder(Long id);

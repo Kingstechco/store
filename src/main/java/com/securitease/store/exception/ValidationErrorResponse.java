@@ -1,4 +1,4 @@
-package com.example.store.exception;
+package com.securitease.store.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,12 +9,10 @@ import java.util.Map;
 
 /**
  * Specialized error response for validation failures.
- * <p>
- * This class extends the standard error response format to include detailed
- * validation error information. It provides field-specific error messages
- * to help clients understand exactly which validation constraints failed
- * and how to correct their input.
- * </p>
+ *
+ * <p>This class extends the standard error response format to include detailed validation error information. It
+ * provides field-specific error messages to help clients understand exactly which validation constraints failed and how
+ * to correct their input.
  *
  * @author Store Application
  * @version 1.0
