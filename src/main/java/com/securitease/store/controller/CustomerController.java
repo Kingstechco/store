@@ -17,13 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.net.URI;
 import java.util.List;
@@ -44,7 +37,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/customers")
 @RequiredArgsConstructor
-@Tag(name = "Customers", description = "Customer management operations")
 public class CustomerController {
 
     private final CustomerService customerService;
@@ -59,16 +51,8 @@ public class CustomerController {
      * @return ResponseEntity containing a list of matching customer DTOs
      */
     @GetMapping
-    @Operation(summary = "Get all customers", description = "Retrieve all customers or search by name substring")
-    @ApiResponses(
-            value = {
-                @ApiResponse(
-                        responseCode = "200",
-                        description = "Successfully retrieved customers",
-                        content = @Content(schema = @Schema(implementation = CustomerDTO.class)))
-            })
     public ResponseEntity<List<CustomerDTO>> getAllCustomers(
-            @Parameter(description = "Name substring to search for") @RequestParam(required = false) String name) {
+            @RequestParam(required = false) String name) {
 
         List<CustomerDTO> customers;
         if (name != null && !name.trim().isEmpty()) {
@@ -87,12 +71,6 @@ public class CustomerController {
      * @return ResponseEntity containing a page of customer DTOs
      */
     @GetMapping("/paged")
-    @Operation(summary = "Get customers with pagination", description = "Retrieve customers with pagination support")
-    @ApiResponses(
-            value = {
-                @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated customers"),
-                @ApiResponse(responseCode = "422", description = "Invalid page size")
-            })
     public ResponseEntity<Page<CustomerDTO>> getCustomersPaged(Pageable pageable) {
         // Validate pagination parameters
         if (pageable.getPageSize() > 100) {
@@ -111,13 +89,7 @@ public class CustomerController {
      * @throws ResourceNotFoundException if customer with the given ID is not found
      */
     @GetMapping("/{id}")
-    @Operation(summary = "Get customer by ID", description = "Retrieve a specific customer by their ID")
-    @ApiResponses(
-            value = {
-                @ApiResponse(responseCode = "200", description = "Customer found"),
-                @ApiResponse(responseCode = "404", description = "Customer not found")
-            })
-    public ResponseEntity<CustomerDTO> getCustomerById(@Parameter(description = "Customer ID") @PathVariable Long id) {
+    public ResponseEntity<CustomerDTO> getCustomerById(@PathVariable Long id) {
         CustomerDTO customer = customerService
                 .getCustomerById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer", "id", id));
@@ -133,14 +105,8 @@ public class CustomerController {
      * @throws jakarta.validation.ConstraintViolationException if request validation fails
      */
     @PostMapping
-    @Operation(summary = "Create a new customer", description = "Create a new customer with the provided information")
-    @ApiResponses(
-            value = {
-                @ApiResponse(responseCode = "201", description = "Customer created successfully"),
-                @ApiResponse(responseCode = "400", description = "Invalid request data")
-            })
     public ResponseEntity<CustomerDTO> createCustomer(
-            @Parameter(description = "Customer creation request") @Valid @RequestBody CustomerRequest request,
+            @Valid @RequestBody CustomerRequest request,
             HttpServletRequest httpRequest) {
         CustomerDTO customer = customerService.createCustomer(request);
 
