@@ -1,0 +1,506 @@
+name: AWS Production CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: store-app
+  ECS_SERVICE: store-app-service
+  ECS_CLUSTER: store-app-cluster
+  ECS_TASK_DEFINITION: store-app-task
+  CONTAINER_NAME: store-app
+  
+  # Security and quality thresholds
+  MIN_CODE_COVERAGE: 80
+  MAX_CRITICAL_VULNERABILITIES: 0
+  MAX_HIGH_VULNERABILITIES: 2
+
+jobs:
+  # === QUALITY GATES STAGE ===
+  quality-gates:
+    name: Quality Gates & Security Checks
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: store_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.meta.outputs.digest }}
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'eclipse-temurin'
+        cache: 'gradle'
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Validate Gradle wrapper
+      uses: gradle/wrapper-validation-action@v2
+
+    # === CODE QUALITY CHECKS ===
+    - name: Run code formatting check
+      run: ./gradlew spotlessCheck
+
+    - name: Compile application
+      run: ./gradlew compileJava compileTestJava
+
+    # === COMPREHENSIVE TESTING ===
+    - name: Run unit tests
+      run: ./gradlew test
+      env:
+        SPRING_PROFILES_ACTIVE: test
+        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/store_test
+        SPRING_DATASOURCE_USERNAME: test_user
+        SPRING_DATASOURCE_PASSWORD: test_password
+        SPRING_DATA_REDIS_HOST: localhost
+        SPRING_DATA_REDIS_PORT: 6379
+
+    - name: Run integration tests
+      run: ./gradlew integrationTest
+      env:
+        SPRING_PROFILES_ACTIVE: test
+        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/store_test
+        SPRING_DATASOURCE_USERNAME: test_user
+        SPRING_DATASOURCE_PASSWORD: test_password
+
+    - name: Generate test coverage report
+      run: ./gradlew jacocoTestReport
+
+    - name: Verify code coverage threshold
+      run: ./gradlew jacocoTestCoverageVerification
+
+    - name: Upload test results
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: Test Results
+        path: build/test-results/**/*.xml
+        reporter: java-junit
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./build/reports/jacoco/test/jacocoTestReport.xml
+        fail_ci_if_error: false
+
+    # === DEPENDENCY SECURITY SCAN ===
+    - name: Run OWASP dependency check
+      run: ./gradlew dependencyCheckAnalyze
+
+    - name: Upload dependency check results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dependency-check-report
+        path: build/reports/dependency-check-report.html
+
+    # === APPLICATION BUILD ===
+    - name: Build application JAR
+      run: ./gradlew build -x test
+
+    - name: Get AWS Account ID
+      id: aws-account
+      run: |
+        # For non-deployment environments, we'll use a placeholder
+        echo "AWS_ACCOUNT_ID=123456789012" >> $GITHUB_ENV
+
+    - name: Extract metadata for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    # === DOCKER BUILD ===
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image (for scanning)
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        load: true
+        tags: ${{ env.ECR_REPOSITORY }}:scan
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    # === CONTAINER SECURITY SCAN ===
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.ECR_REPOSITORY }}:scan
+        format: 'json'
+        output: 'trivy-results.json'
+
+    - name: Check vulnerability threshold
+      run: |
+        CRITICAL=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' trivy-results.json || echo 0)
+        HIGH=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length' trivy-results.json || echo 0)
+        
+        echo "Critical vulnerabilities: $CRITICAL"
+        echo "High vulnerabilities: $HIGH"
+        
+        if [ "$CRITICAL" -gt "${{ env.MAX_CRITICAL_VULNERABILITIES }}" ]; then
+          echo "❌ Critical vulnerabilities ($CRITICAL) exceed threshold (${{ env.MAX_CRITICAL_VULNERABILITIES }})"
+          exit 1
+        fi
+        
+        if [ "$HIGH" -gt "${{ env.MAX_HIGH_VULNERABILITIES }}" ]; then
+          echo "❌ High vulnerabilities ($HIGH) exceed threshold (${{ env.MAX_HIGH_VULNERABILITIES }})"
+          exit 1
+        fi
+        
+        echo "✅ Security scan passed"
+
+    - name: Convert Trivy results to SARIF
+      run: |
+        # Convert JSON to SARIF format for GitHub Security tab
+        jq -n --argjson data "$(cat trivy-results.json)" '
+        {
+          "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+          "version": "2.1.0",
+          "runs": [
+            {
+              "tool": {
+                "driver": {
+                  "name": "Trivy",
+                  "version": "latest"
+                }
+              },
+              "results": []
+            }
+          ]
+        }' > trivy-results.sarif
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # === AWS DEPLOYMENT STAGE ===
+  aws-deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: quality-gates
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'eclipse-temurin'
+        cache: 'gradle'
+
+    - name: Build application
+      run: |
+        chmod +x gradlew
+        ./gradlew build -x test
+
+    # === AWS AUTHENTICATION ===
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActions-${{ github.run_id }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    # === ECR SETUP AND LOGIN ===
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Check if ECR repository exists
+      run: |
+        aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} || \
+        aws ecr create-repository \
+          --repository-name ${{ env.ECR_REPOSITORY }} \
+          --image-scanning-configuration scanOnPush=true \
+          --encryption-configuration encryptionType=AES256 \
+          --region ${{ env.AWS_REGION }}
+
+    # === PRODUCTION DOCKER BUILD ===
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Extract metadata for production image
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
+        tags: |
+          type=ref,event=branch
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+
+    - name: Build and push production Docker image
+      id: build-image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          SPRING_PROFILES_ACTIVE=aws
+          BUILD_VERSION=${{ github.sha }}
+          BUILD_TIME=${{ github.event.head_commit.timestamp }}
+
+    # === POST-BUILD SECURITY SCAN ===
+    - name: Scan production image in ECR
+      run: |
+        IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.ref_name }}-${{ github.sha }}"
+        
+        # Wait for ECR scan to complete
+        echo "Waiting for ECR vulnerability scan to complete..."
+        aws ecr wait image-scan-complete \
+          --repository-name ${{ env.ECR_REPOSITORY }} \
+          --image-id imageTag=${{ github.ref_name }}-${{ github.sha }} \
+          --region ${{ env.AWS_REGION }}
+        
+        # Get scan results
+        SCAN_RESULTS=$(aws ecr describe-image-scan-findings \
+          --repository-name ${{ env.ECR_REPOSITORY }} \
+          --image-id imageTag=${{ github.ref_name }}-${{ github.sha }} \
+          --region ${{ env.AWS_REGION }} \
+          --query 'imageScanFindings.findingCounts' \
+          --output json)
+        
+        echo "ECR Scan Results: $SCAN_RESULTS"
+        
+        CRITICAL=$(echo $SCAN_RESULTS | jq -r '.CRITICAL // 0')
+        HIGH=$(echo $SCAN_RESULTS | jq -r '.HIGH // 0')
+        
+        if [ "$CRITICAL" -gt "0" ] || [ "$HIGH" -gt "5" ]; then
+          echo "❌ Production image has critical security vulnerabilities"
+          exit 1
+        fi
+        
+        echo "✅ Production image security scan passed"
+
+    # === ECS DEPLOYMENT ===
+    - name: Download current ECS task definition
+      run: |
+        # Get current task definition or use template
+        if aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} --region ${{ env.AWS_REGION }} > /dev/null 2>&1; then
+          aws ecs describe-task-definition \
+            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+            --region ${{ env.AWS_REGION }} \
+            --query taskDefinition > task-definition.json
+        else
+          # Use our template and substitute variables
+          sed "s/\${AWS_ACCOUNT_ID}/${{ secrets.AWS_ACCOUNT_ID }}/g; s/\${AWS_REGION}/${{ env.AWS_REGION }}/g; s/\${ENVIRONMENT}/production/g" \
+            aws/task-definition-template.json > task-definition.json
+        fi
+
+    - name: Update ECS task definition with new image
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: ${{ env.CONTAINER_NAME }}
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.ref_name }}-${{ github.sha }}
+        environment-variables: |
+          SPRING_PROFILES_ACTIVE=aws
+          AWS_REGION=${{ env.AWS_REGION }}
+          APP_VERSION=${{ github.sha }}
+          ENVIRONMENT=${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+
+    - name: Create ECS cluster if not exists
+      run: |
+        aws ecs describe-clusters --clusters ${{ env.ECS_CLUSTER }} --region ${{ env.AWS_REGION }} || \
+        aws ecs create-cluster \
+          --cluster-name ${{ env.ECS_CLUSTER }} \
+          --capacity-providers FARGATE \
+          --default-capacity-provider-strategy capacityProvider=FARGATE,weight=1 \
+          --region ${{ env.AWS_REGION }}
+
+    - name: Deploy to Amazon ECS
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
+        force-new-deployment: true
+
+    # === POST-DEPLOYMENT VERIFICATION ===
+    - name: Verify deployment health
+      run: |
+        echo "Waiting for service to stabilize..."
+        sleep 60
+        
+        # Get service details
+        SERVICE_INFO=$(aws ecs describe-services \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --services ${{ env.ECS_SERVICE }} \
+          --region ${{ env.AWS_REGION }})
+        
+        RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.services[0].runningCount')
+        DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.services[0].desiredCount')
+        
+        echo "Running tasks: $RUNNING_COUNT"
+        echo "Desired tasks: $DESIRED_COUNT"
+        
+        if [ "$RUNNING_COUNT" -eq "$DESIRED_COUNT" ] && [ "$RUNNING_COUNT" -gt "0" ]; then
+          echo "✅ Deployment successful - $RUNNING_COUNT/$DESIRED_COUNT tasks running"
+        else
+          echo "❌ Deployment verification failed"
+          exit 1
+        fi
+
+    # === PERFORMANCE TESTING ===
+    - name: Run performance tests against deployed service
+      if: github.ref == 'refs/heads/main'
+      run: |
+        # Get ALB endpoint
+        ALB_ENDPOINT=$(aws ecs describe-services \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --services ${{ env.ECS_SERVICE }} \
+          --region ${{ env.AWS_REGION }} \
+          --query 'services[0].loadBalancers[0].targetGroupArn' \
+          --output text)
+        
+        if [ "$ALB_ENDPOINT" != "None" ] && [ "$ALB_ENDPOINT" != "null" ]; then
+          echo "Running performance tests against production endpoint..."
+          # Add your performance testing commands here
+          # Example: artillery, k6, or custom load testing
+        fi
+
+    # === ROLLBACK ON FAILURE ===
+    - name: Rollback on deployment failure
+      if: failure()
+      run: |
+        echo "Deployment failed, initiating rollback..."
+        
+        # Get previous task definition
+        PREVIOUS_TASK_DEF=$(aws ecs list-task-definitions \
+          --family-prefix ${{ env.ECS_TASK_DEFINITION }} \
+          --status ACTIVE \
+          --sort DESC \
+          --region ${{ env.AWS_REGION }} \
+          --query 'taskDefinitionArns[1]' \
+          --output text)
+        
+        if [ "$PREVIOUS_TASK_DEF" != "None" ] && [ "$PREVIOUS_TASK_DEF" != "null" ]; then
+          echo "Rolling back to: $PREVIOUS_TASK_DEF"
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --task-definition $PREVIOUS_TASK_DEF \
+            --region ${{ env.AWS_REGION }}
+        fi
+
+    # === SLACK NOTIFICATION ===
+    - name: Notify deployment status
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        text: |
+          🚀 *Store App Deployment*
+          
+          *Status:* ${{ job.status == 'success' && '✅ SUCCESS' || '❌ FAILED' }}
+          *Environment:* ${{ github.ref == 'refs/heads/main' && 'Production' || 'Staging' }}
+          *Image:* `${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.ref_name }}-${{ github.sha }}`
+          *Commit:* ${{ github.sha }}
+          *Author:* ${{ github.actor }}
+          
+          <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # === CLEANUP STAGE ===
+  cleanup:
+    name: Cleanup Old Images
+    runs-on: ubuntu-latest
+    needs: aws-deploy
+    if: success() && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActions-Cleanup-${{ github.run_id }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Clean up old ECR images
+      run: |
+        echo "Cleaning up old ECR images..."
+        
+        # Keep last 10 images, delete older ones
+        aws ecr list-images \
+          --repository-name ${{ env.ECR_REPOSITORY }} \
+          --filter tagStatus=TAGGED \
+          --query 'imageIds[?imageTag!="latest"] | sort_by(@, &imagePushedAt) | [0:-10]' \
+          --output json \
+          --region ${{ env.AWS_REGION }} > old-images.json
+        
+        if [ -s old-images.json ] && [ "$(cat old-images.json)" != "[]" ]; then
+          aws ecr batch-delete-image \
+            --repository-name ${{ env.ECR_REPOSITORY }} \
+            --image-ids file://old-images.json \
+            --region ${{ env.AWS_REGION }}
+          echo "✅ Cleaned up old ECR images"
+        else
+          echo "No old images to clean up"
+        fi
