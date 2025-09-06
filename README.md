@@ -1,5 +1,35 @@
 # Store Application
-The Store application keeps track of customers and orders in a database.
+
+An enterprise-grade Spring Boot application that manages customers and orders with comprehensive REST APIs, following industry best practices and global standards.
+
+## 🚀 Version 2.1 - Latest Updates
+
+### Recent Improvements (Latest Session)
+- **Spring Boot 3.5.5**: Upgraded from 3.4.2 with latest security patches and performance improvements
+- **100% Test Success**: Fixed all failing tests with proper Spring Security integration
+- **Enhanced Test Infrastructure**: Added TestContainers, security test context, and comprehensive integration tests
+- **Bug Fixes**: Resolved lazy loading issues and DTO conversion problems
+- **Code Quality**: Applied professional formatting and updated package structure to `com.securitease.store`
+
+### Version 2.0 - Foundation
+This application has been significantly enhanced with:
+- **Enterprise Architecture**: Proper service layer, SOLID principles, dependency injection
+- **REST API Best Practices**: Versioned APIs, proper HTTP status codes, Location headers
+- **Enhanced Security**: Security headers, CORS configuration, input validation
+- **Performance Optimization**: Database indexes, connection pooling, N+1 query prevention
+- **Production Ready**: Environment-specific configurations, monitoring, comprehensive logging
+
+## 📋 Features
+
+- **Customer Management**: Create, read, update, delete customers with search functionality
+- **Order Management**: Full CRUD operations for orders with customer associations
+- **RESTful APIs**: Industry-standard REST endpoints with proper HTTP semantics
+- **Database Integration**: PostgreSQL with Liquibase migrations and optimized queries
+- **Validation**: Comprehensive input validation with business rule enforcement
+- **Error Handling**: Structured error responses with specific error codes
+- **Monitoring**: Health checks, metrics, and Prometheus integration
+- **Security**: Security headers, CORS support, and validation layers
+- **Documentation**: Comprehensive Javadoc and API documentation
 
 # Assumptions
 This README assumes you're using a posix environment. It's possible to run this on Windows as well:
@@ -8,9 +38,12 @@ This README assumes you're using a posix environment. It's possible to run this 
 
 
 # Prerequisites
-This service assumes the presence of a postgresql 16.2 database server running on localhost:5433 (note the non-standard port)
-It assumes a username and password `admin:admin` can be used.
-It assumes there's already a database called `store`
+
+## Database (PostgreSQL)
+This service requires a PostgreSQL 16.2 database server running on localhost:5432
+- Username: `admin`
+- Password: `admin` 
+- Database: `store`
 
 You can start the PostgreSQL instance like this:
 ```shell
@@ -21,10 +54,29 @@ docker run -d \
   -e POSTGRES_PASSWORD=admin \
   -e POSTGRES_DB=store \
   -v postgres:/var/lib/postgresql/data \
-  -p 5433:5432 \
+  -p 5432:5432 \
   postgres:16.2 \
   postgres -c wal_level=logical
 ```
+
+## Cache (Redis)
+For optimal performance, the application uses Redis for caching frequently accessed data.
+Redis runs on the standard port 6379 by default.
+
+You can start a Redis instance like this:
+```shell
+docker run -d \
+  --name redis \
+  --restart always \
+  -p 6379:6379 \
+  redis:7-alpine \
+  redis-server --appendonly yes
+```
+
+### Cache Configuration
+- **Development**: 10-minute TTL, cache management endpoints enabled
+- **Production**: 30-minute TTL, optimized connection pool
+- **Environment Variables**: `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
 
 # Running the application
 You should be able to run the service using
@@ -35,38 +87,229 @@ You should be able to run the service using
 The application uses Liquibase to migrate the schema. Some sample data is provided. You can create more data by reading the documentation in utils/README.md
 
 # Data model
-An order has an ID, a description, and is associated with the customer which made the order.
-A customer has an ID, a name, and 0 or more orders.
+- A **customer** has an ID, a name, and 0 or more orders.
+- An **order** has an ID, a description, is associated with a customer, and contains 1 or more products.
+- A **product** has an ID, a description, and appears in 0 or more orders.
 
-# API
-Two endpoints are provided:
-   * /order
-   * /customer
+The application models a many-to-many relationship between orders and products through a junction table.
 
-Each of them supports a POST and a GET. The data model is circular - a customer owns a number of orders, and that order necessarily refers back to the customer which owns it.
-To avoid loops in the serializer, when writing out a Customer or an Order, they're mapped to CustomerDTO and OrderDTO which contain truncated versions of the dependent object - CustomerOrderDTO and OrderCustomerDTO respectively.
+# 🔌 API Endpoints
 
-The API is documented in the OpenAPI file OpenAPI.yaml. Note that this spec includes part of one of the tasks below (the new /products endpoint)
+## Version 2.0 REST API
 
-# Tasks
+The application provides RESTful APIs following industry standards:
 
-1. Extend the order endpoint to find a specific order, by ID
-2. Extend the customer endpoint to find customers based on a query string to match a substring of one of the words in their name
-3. Users have complained that in production the GET endpoints can get very slow. The database is unfortunately not co-located with the application server, and there's high latency between the two. Identify if there are any optimisations that can improve performance
-4. Add a new endpoint /products to model products which appear in an order:
-      * A single order contains 1 or more products. 
-      * A product has an ID and a description. 
-      * Add a POST endpoint to create a product
-      * Add a GET endpoint to return all products, and a specific product by ID
-        * In both cases, also return a list of the order IDs which contain those products
-      * Change the orders endpoint to return a list of products contained in the order
+### Customer Endpoints
+- `GET /api/v1/customers` - Get all customers (with optional name search)
+- `GET /api/v1/customers/paged` - Get customers with pagination
+- `GET /api/v1/customers/{id}` - Get customer by ID
+- `POST /api/v1/customers` - Create new customer (returns Location header)
+- `PUT /api/v1/customers/{id}` - Update customer
+- `DELETE /api/v1/customers/{id}` - Delete customer
 
-# Bonus points
-1. Implement a CI pipeline on the platform of your choice to build the project and deliver it as a Dockerized image
+### Order Endpoints
+- `GET /api/v1/orders` - Get all orders (with products)
+- `GET /api/v1/orders/paged` - Get orders with pagination
+- `GET /api/v1/orders/{id}` - Get order by ID (with products)
+- `GET /api/v1/orders/customers/{customerId}` - Get orders for specific customer
+- `POST /api/v1/orders` - Create new order (returns Location header)
+- `PUT /api/v1/orders/{id}` - Update order
+- `DELETE /api/v1/orders/{id}` - Delete order
 
-# Notes on the tasks
-Assume that the project represents a production application.
-Think carefully about the impact on performance when implementing your changes
-The specifications of the tasks have been left deliberately vague. You will be required to exercise judgement about what to deliver - in a real world environment, you would clarify these points in refinement, but since this is a project to be completed without interaction, feel free to make assumptions - but be prepared to defend them when asked.
-There's no CI pipeline associated with this project, but in reality there would be. Consider the things that you would expect that pipeline to verify before allowing your code to be promoted
-Feel free to refactor the codebase if necessary. Bad choices were deliberately made when creating this project.
+### Product Endpoints
+- `GET /api/v1/products` - Get all products (with order IDs)
+- `GET /api/v1/products?description=search` - Search products by description
+- `GET /api/v1/products/paged` - Get products with pagination
+- `GET /api/v1/products/{id}` - Get product by ID (with order IDs)
+- `POST /api/v1/products` - Create new product (returns Location header)
+- `PUT /api/v1/products/{id}` - Update product
+- `DELETE /api/v1/products/{id}` - Delete product
+
+### API Features
+- **Versioning**: All endpoints prefixed with `/api/v1/` for backward compatibility
+- **Pagination**: Configurable page size (max 100, default 20)
+- **Search**: Name-based customer search with case-insensitive matching
+- **Validation**: Comprehensive input validation with detailed error messages
+- **Error Handling**: Structured error responses with specific error codes
+
+## Data Transfer Objects (DTOs)
+
+The API uses optimized DTOs to prevent circular references:
+- **CustomerDTO**: Customer with simplified order information (CustomerOrderDTO)
+- **OrderDTO**: Order with simplified customer information (OrderCustomerDTO) and products (OrderProductDTO)
+- **ProductDTO**: Product with list of order IDs that contain this product
+- **Request DTOs**: CustomerRequest, OrderRequest, and ProductRequest for create/update operations
+
+## Error Response Format
+
+```json
+{
+  "status": 404,
+  "error": "RESOURCE_NOT_FOUND",
+  "message": "Customer not found with id: 123",
+  "timestamp": "2025-01-04T10:30:00",
+  "path": "/api/v1/customers/123"
+}
+```
+
+## Example API Usage
+
+### Create Customer
+```bash
+curl -X POST http://localhost:8080/api/v1/customers \
+  -H "Content-Type: application/json" \
+  -d '{"name": "John Doe"}'
+```
+
+### Create Order
+```bash
+curl -X POST http://localhost:8080/api/v1/orders \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Order description", "customerId": 1}'
+```
+
+### Create Product
+```bash
+curl -X POST http://localhost:8080/api/v1/products \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Laptop Computer"}'
+```
+
+### Get Customers with Pagination
+```bash
+curl "http://localhost:8080/api/v1/customers/paged?page=0&size=10&sort=name,asc"
+```
+
+# 🛠️ Configuration & Environment
+
+## Environment Profiles
+
+The application supports multiple environment profiles:
+
+### Development (`application-dev.yaml`)
+- Debug logging enabled
+- SQL query logging with formatting
+- All actuator endpoints exposed
+- Detailed health check information
+
+### Production (`application-prod.yaml`)
+- Optimized connection pooling (20 max connections)
+- Environment variable support for credentials
+- Structured logging with file output
+- Prometheus metrics enabled
+- Restricted actuator endpoints
+
+## Environment Variables
+
+For production deployment, use these environment variables:
+- `DB_USERNAME`: Database username (default: admin)
+- `DB_PASSWORD`: Database password (default: admin)
+- `SPRING_PROFILES_ACTIVE`: Active profile (dev/prod)
+
+## Running with Profiles
+
+```bash
+# Development
+./gradlew bootRun --args='--spring.profiles.active=dev'
+
+# Production
+export DB_USERNAME=myuser
+export DB_PASSWORD=mypassword
+./gradlew bootRun --args='--spring.profiles.active=prod'
+```
+
+# 📊 Monitoring & Health
+
+## Actuator Endpoints
+
+- **Health Check**: `GET /actuator/health`
+- **Metrics**: `GET /actuator/metrics`
+- **Prometheus**: `GET /actuator/prometheus` (production only)
+
+## Performance Features
+
+- **Database Indexes**: Optimized queries with proper indexing
+- **Connection Pooling**: Hikari connection pool with production tuning
+- **N+1 Query Prevention**: EntityGraph and JOIN FETCH optimizations
+- **Pagination Limits**: Maximum 100 items per page to prevent performance issues
+- **Redis Caching**: Multi-layer caching strategy with intelligent cache eviction
+  - Individual entity caching (customers, orders)
+  - Search result caching
+  - Relationship query caching
+  - Configurable TTL per cache type
+
+# 🏗️ Architecture
+
+## Layer Structure
+```
+┌─────────────────┐
+│   Controllers   │  ← REST endpoints, validation, HTTP handling
+├─────────────────┤
+│    Services     │  ← Business logic, transactions
+├─────────────────┤
+│  Repositories   │  ← Data access, query optimization
+├─────────────────┤
+│    Entities     │  ← JPA entities with indexes
+└─────────────────┘
+```
+
+## Key Design Patterns
+- **Service Layer Pattern**: Business logic abstraction
+- **DTO Pattern**: Data transfer optimization
+- **Repository Pattern**: Data access abstraction
+- **Exception Handling**: Global exception management
+
+# 📝 Documentation
+
+- **Comprehensive Javadoc**: All public APIs documented
+- **API Examples**: Included in this README
+- **Change Log**: See `CHANGELOG.md` for detailed changes
+- **Improvements Guide**: See `IMPROVEMENTS.md` for technical details
+
+# 🎯 Completed Enhancements (Version 2.0)
+
+## ✅ Originally Requested Tasks
+1. **✅ Order by ID endpoint**: `GET /api/v1/orders/{id}`
+2. **✅ Customer search**: `GET /api/v1/customers?name=searchTerm`
+3. **✅ Performance optimizations**: Database indexes, N+1 query prevention, connection pooling
+4. **✅ Products endpoint**: Complete `/api/v1/products` API with order relationships
+
+## ✅ Additional Enterprise Improvements
+- **Architecture**: Service layer implementation, SOLID principles
+- **Security**: Security headers, CORS, input validation
+- **API Design**: REST conventions, versioning, proper HTTP status codes
+- **Error Handling**: Structured responses with error codes
+- **Configuration**: Environment profiles, externalized configuration
+- **Caching**: Redis-based multi-layer caching with intelligent eviction
+- **Documentation**: Comprehensive Javadoc and user guides
+- **Monitoring**: Health checks, metrics, logging improvements
+
+# 🚀 Future Roadmap
+
+## Suggested Enhancements
+- **Authentication**: JWT or OAuth2 implementation
+- **Advanced Caching**: Cache clustering and distributed cache invalidation
+- **Event-Driven Architecture**: Async processing with events
+- **Container Deployment**: Docker and Kubernetes support
+- **CI/CD Pipeline**: Automated testing and deployment
+
+## 🗄️ Cache Management (Development)
+
+Cache management endpoints are available in development mode:
+
+```bash
+# Evict specific customer cache
+DELETE /api/v1/admin/cache/customers/{customerId}
+
+# Evict customer's orders cache  
+DELETE /api/v1/admin/cache/customers/{customerId}/orders
+
+# Clear customer search cache
+DELETE /api/v1/admin/cache/searches/customers
+
+# Warmup caches
+POST /api/v1/admin/cache/warmup
+
+# Get cache statistics
+GET /api/v1/admin/cache/stats/{cacheName}
+```

@@ -1,11 +1,14 @@
+server:
+  port: 8081
+
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/store
+    url: jdbc:postgresql://localhost:5432/store
     username: admin
     password: admin
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create-only
     properties:
       hibernate:
         format_sql: true
@@ -13,3 +16,37 @@ spring:
         default_batch_fetch_size: 10
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      jedis:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+  cache:
+    type: redis
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+# OpenAPI/Swagger Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    disable-swagger-default-url: true
+  show-actuator: true

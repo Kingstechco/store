@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: 3
+      author: store-app
+      changes:
+        - createTable:
+            tableName: product
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: order_product
+            columns:
+              - column:
+                  name: order_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+        - addPrimaryKey:
+            tableName: order_product
+            columnNames: order_id, product_id
+            constraintName: pk_order_product
+
+        - addForeignKeyConstraint:
+            baseTableName: order_product
+            baseColumnNames: order_id
+            constraintName: fk_order_product_order
+            referencedTableName: "order"
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: order_product
+            baseColumnNames: product_id
+            constraintName: fk_order_product_product
+            referencedTableName: product
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: product
+            indexName: idx_product_description
+            columns:
+              - column:
+                  name: description
+
+  - changeSet:
+      id: 3-data
+      author: store-app
+      changes:
+        - sqlFile:
+            path: db/changelog/product-data.sql

@@ -1,0 +1,466 @@
+{
+  "info": {
+    "name": "Store API - Exception Handling Tests",
+    "description": "Comprehensive test collection for Store API exception handling",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8081",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Success Cases",
+      "item": [
+        {
+          "name": "Get All Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer by ID (Valid)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customers with Pagination",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/paged?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "paged"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Customers by Name",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers?name=Test",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "Test"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Valid Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Customer via Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Customer (Valid)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Customer Name\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Resource Not Found (404)",
+      "item": [
+        {
+          "name": "Get Non-existent Customer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/99999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "99999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Non-existent Customer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Customer Name\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/99999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "99999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Non-existent Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/99999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "99999"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Validation Errors (400)",
+      "item": [
+        {
+          "name": "Create Customer - Empty Name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Customer - Missing Name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Customer - Empty Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Customer - Missing Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Malformed JSON (400)",
+      "item": [
+        {
+          "name": "Create Customer - Invalid JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": invalid}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Customer - Malformed JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"test\", invalid}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Customer - Invalid JSON",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": invalid}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Additional Test Cases",
+      "item": [
+        {
+          "name": "Create Customer - Null Body",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Customer - Very Long Name (Edge Case)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"This is a very long customer name that might exceed database field limits and could potentially cause issues with validation or database constraints if not properly handled by the application\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer - Invalid ID Format",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/invalid-id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "invalid-id"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer - Negative ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/-1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "-1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Valid Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "2"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set up any pre-request scripts here",
+          "console.log('Starting test for: ' + pm.info.requestName);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Basic test to verify response",
+          "pm.test('Response received', function () {",
+          "    pm.response.to.not.be.undefined;",
+          "});",
+          "",
+          "// Log response for debugging",
+          "console.log('Status Code:', pm.response.code);",
+          "console.log('Response:', pm.response.text());"
+        ]
+      }
+    }
+  ]
+}
