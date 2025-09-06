@@ -65,7 +65,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConfig.CUSTOMERS_CACHE, key = "#id")
+    @Cacheable(value = CacheConfig.CUSTOMERS_CACHE, key = "#id", unless = "#result == null || !#result.isPresent()")
     public Optional<CustomerDTO> getCustomerById(Long id) {
         log.debug("Fetching customer by id: {}", id);
         return customerRepository.findWithOrdersById(id).map(customerMapper::customerToCustomerDTO);

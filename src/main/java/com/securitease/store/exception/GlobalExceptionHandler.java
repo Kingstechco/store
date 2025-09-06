@@ -2,17 +2,23 @@ package com.securitease.store.exception;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Global exception handler for the Store application.
@@ -35,8 +41,9 @@ import java.util.Map;
  * @see ErrorResponse
  * @see ValidationErrorResponse
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.securitease.store.controller")
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class GlobalExceptionHandler {
 
     /**
@@ -63,25 +70,79 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles validation errors and returns a 400 Bad Request response.
+     * Handles validation exceptions and returns a 400 Bad Request response.
      *
-     * @param ex the MethodArgumentNotValidException containing validation errors
-     * @return ResponseEntity containing ValidationErrorResponse with 400 status and field-specific error details
+     * @param ex the MethodArgumentNotValidException that was thrown
+     * @param request the web request that triggered the exception
+     * @return ResponseEntity containing ValidationErrorResponse with 400 status
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ValidationErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ValidationErrorResponse> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, WebRequest request) {
 
-        log.error("Validation failed: {}", ex.getMessage());
+        log.error("Validation exception: {}", ex.getMessage());
 
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage()));
 
         ValidationErrorResponse errorResponse = new ValidationErrorResponse(
-                HttpStatus.BAD_REQUEST.value(), "Validation failed", LocalDateTime.now(), errors);
+                HttpStatus.BAD_REQUEST.value(),
+                "Request validation failed",
+                LocalDateTime.now(),
+                errors);
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles constraint violation exceptions and returns a 400 Bad Request response.
+     *
+     * @param ex the ConstraintViolationException that was thrown
+     * @param request the web request that triggered the exception
+     * @return ResponseEntity containing ValidationErrorResponse with 400 status
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ValidationErrorResponse> handleConstraintViolation(
+            ConstraintViolationException ex, WebRequest request) {
+
+        log.error("Constraint violation exception: {}", ex.getMessage());
+
+        Map<String, String> violations = ex.getConstraintViolations()
+                .stream()
+                .collect(Collectors.toMap(
+                        violation -> violation.getPropertyPath().toString(),
+                        ConstraintViolation::getMessage
+                ));
+
+        ValidationErrorResponse errorResponse = new ValidationErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Request constraint validation failed",
+                LocalDateTime.now(),
+                violations);
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles malformed JSON requests and returns a 400 Bad Request response.
+     *
+     * @param ex the HttpMessageNotReadableException that was thrown
+     * @param request the web request that triggered the exception
+     * @return ResponseEntity containing ErrorResponse with 400 status
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex, WebRequest request) {
+
+        log.error("Malformed request body: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "MALFORMED_JSON",
+                "Request body is missing or malformed JSON",
+                LocalDateTime.now(),
+                request.getDescription(false));
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
@@ -133,23 +194,86 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles all unhandled exceptions and returns a 500 Internal Server Error response.
+     * Handles data access exceptions that occur during database operations.
      *
-     * <p>This is a catch-all handler for any exceptions not specifically handled by other methods. It ensures that no
-     * exception goes unhandled and provides a consistent error response format.
+     * @param ex the DataAccessException that was thrown
+     * @param request the web request that triggered the exception
+     * @return ResponseEntity containing ErrorResponse with 500 status
+     */
+    @ExceptionHandler(org.springframework.dao.DataAccessException.class)
+    public ResponseEntity<ErrorResponse> handleDataAccessException(org.springframework.dao.DataAccessException ex, WebRequest request) {
+        
+        log.error("Database error occurred: {}", ex.getMessage(), ex);
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "DATABASE_ERROR",
+                "A database error occurred",
+                LocalDateTime.now(),
+                request.getDescription(false));
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Handles illegal argument exceptions and returns a 400 Bad Request response.
      *
-     * @param ex the unhandled exception
+     * @param ex the IllegalArgumentException that was thrown
+     * @param request the web request that triggered the exception
+     * @return ResponseEntity containing ErrorResponse with 400 status
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
+        
+        log.error("Invalid argument: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "INVALID_ARGUMENT",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getDescription(false));
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles illegal state exceptions and returns a 422 Unprocessable Entity response.
+     *
+     * @param ex the IllegalStateException that was thrown
+     * @param request the web request that triggered the exception
+     * @return ResponseEntity containing ErrorResponse with 422 status
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex, WebRequest request) {
+        
+        log.error("Invalid state: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                "INVALID_STATE",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getDescription(false));
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    /**
+     * Handles any other exceptions and returns a 500 Internal Server Error response.
+     *
+     * @param ex the Exception that was thrown
      * @param request the web request that triggered the exception
      * @return ResponseEntity containing ErrorResponse with 500 status
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
-
-        log.error("Unexpected error occurred", ex);
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, WebRequest request) {
+        
+        log.error("Unexpected exception: {}", ex.getMessage(), ex);
 
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "INTERNAL_SERVER_ERROR",
+                "INTERNAL_ERROR",
                 "An unexpected error occurred",
                 LocalDateTime.now(),
                 request.getDescription(false));
