@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: store-app-config
+  namespace: store-app
+  labels:
+    app.kubernetes.io/name: store-app
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: store-application
+data:
+  # Redis Configuration
+  redis-host: "redis-service"
+  redis-port: "6379"
+  
+  # Application Configuration
+  server-port: "8081"
+  
+  # Logging Configuration
+  logging-level: "INFO"
+  
+  # Cache Configuration
+  cache-ttl: "600000"
+  
+  # JVM Configuration
+  java-opts: "-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseContainerSupport"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: store-app-application-config
+  namespace: store-app
+  labels:
+    app.kubernetes.io/name: store-app
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/component: config
+data:
+  application-kubernetes.yaml: |
+    spring:
+      application:
+        name: store-app
+      
+      datasource:
+        url: ${SPRING_DATASOURCE_URL}
+        username: ${SPRING_DATASOURCE_USERNAME}
+        password: ${SPRING_DATASOURCE_PASSWORD}
+        driver-class-name: org.postgresql.Driver
+        hikari:
+          maximum-pool-size: 20
+          minimum-idle: 5
+          idle-timeout: 300000
+          connection-timeout: 20000
+          leak-detection-threshold: 60000
+
+      data:
+        redis:
+          host: ${SPRING_DATA_REDIS_HOST}
+          port: ${SPRING_DATA_REDIS_PORT}
+          timeout: 2000ms
+          jedis:
+            pool:
+              max-active: 8
+              max-wait: -1ms
+              max-idle: 8
+              min-idle: 0
+
+      jpa:
+        hibernate:
+          ddl-auto: validate
+        show-sql: false
+        properties:
+          hibernate:
+            dialect: org.hibernate.dialect.PostgreSQLDialect
+            format_sql: false
+
+      cache:
+        type: redis
+        redis:
+          time-to-live: 600000
+
+    server:
+      port: 8081
+      servlet:
+        context-path: /
+      tomcat:
+        threads:
+          max: 200
+          min-spare: 10
+
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info,metrics,prometheus,env
+      endpoint:
+        health:
+          show-details: always
+          probes:
+            enabled: true
+        metrics:
+          enabled: true
+        prometheus:
+          enabled: true
+      metrics:
+        export:
+          prometheus:
+            enabled: true
+            step: 15s
+
+    logging:
+      level:
+        com.securitease.store: INFO
+        org.springframework: WARN
+        org.hibernate: WARN
+      pattern:
+        console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

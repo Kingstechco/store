@@ -5,6 +5,8 @@ plugins {
     id 'org.liquibase.gradle' version '2.2.0'
     id 'com.diffplug.spotless' version '6.25.0'
     id 'jacoco'
+    id 'org.sonarqube' version '4.4.1.3373'
+    id 'org.owasp.dependencycheck' version '9.0.7'
 }
 
 group = 'com.example'
@@ -48,6 +50,8 @@ dependencies {
     implementation 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.2'
 
+    // Monitoring and metrics
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // Test dependencies
     testCompileOnly 'org.projectlombok:lombok'
@@ -71,6 +75,8 @@ tasks.jacocoTestReport {
 
     reports {
         html.required.set(true)
+        xml.required.set(true)
+        csv.required.set(false)
     }
     afterEvaluate {
         classDirectories = files(classDirectories.files.collect {
@@ -78,4 +84,57 @@ tasks.jacocoTestReport {
                     exclude: ['**/mapper/**', '**/StoreApplication.class'])
         })
     }
+}
+
+// SonarQube configuration
+sonar {
+    properties {
+        property 'sonar.projectKey', 'store-app'
+        property 'sonar.projectName', 'Store Application'
+        property 'sonar.projectVersion', project.version
+        property 'sonar.java.coveragePlugin', 'jacoco'
+        property 'sonar.coverage.jacoco.xmlReportPaths', "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+        property 'sonar.exclusions', '**/mapper/**, **/*Application.java'
+        property 'sonar.sources', 'src/main/java'
+        property 'sonar.tests', 'src/test/java'
+    }
+}
+
+// Dependency Check configuration
+dependencyCheck {
+    format = 'HTML'
+    outputDirectory = "${buildDir}/reports"
+    scanConfigurations = ['runtimeClasspath']
+    suppressionFile = 'dependency-check-suppressions.xml'
+    failBuildOnCVSS = 7.0
+}
+
+// JaCoCo test coverage verification
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.70
+            }
+        }
+        rule {
+            element = 'CLASS'
+            excludes = ['com.securitease.store.mapper.*', 'com.securitease.store.StoreApplication']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.60
+            }
+        }
+    }
+}
+
+// Custom task for integration tests
+task integrationTest(type: Test) {
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include '**/integration/**'
+    shouldRunAfter test
 }

@@ -1,0 +1,55 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: store-app-ingress
+  namespace: store-app
+  labels:
+    app.kubernetes.io/name: store-app
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: store-application
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+spec:
+  tls:
+  - hosts:
+    - api.store-app.com
+    - store-app.com
+    secretName: store-app-tls
+  rules:
+  - host: api.store-app.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: store-app-service
+            port:
+              number: 80
+      - path: /actuator/health
+        pathType: Exact
+        backend:
+          service:
+            name: store-app-service
+            port:
+              number: 80
+  - host: store-app.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: store-app-service
+            port:
+              number: 80
