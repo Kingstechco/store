@@ -71,7 +71,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConfig.ORDERS_CACHE, key = "#id")
+    @Cacheable(value = CacheConfig.ORDERS_CACHE, key = "#id", unless = "#result.isEmpty()")
     public Optional<OrderDTO> getOrderById(Long id) {
         log.debug("Fetching order by id: {}", id);
         return orderRepository.findById(id).map(orderMapper::orderToOrderDTO);
@@ -89,7 +89,10 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Caching(
             put = {@CachePut(value = CacheConfig.ORDERS_CACHE, key = "#result.id")},
-            evict = {@CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#request.customerId")})
+            evict = {
+                @CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#request.customerId"),
+                @CacheEvict(value = CacheConfig.CUSTOMERS_CACHE, key = "#request.customerId")
+            })
     public OrderDTO createOrder(OrderRequest request) {
         log.info("Creating new order for customer id: {}", request.getCustomerId());
 
@@ -112,8 +115,13 @@ public class OrderServiceImpl implements OrderService {
             put = {@CachePut(value = CacheConfig.ORDERS_CACHE, key = "#id")},
             evict = {
                 @CacheEvict(value = CacheConfig.ORDER_BY_CUSTOMER_CACHE, key = "#request.customerId"),
+                @CacheEvict(value = CacheConfig.CUSTOMERS_CACHE, key = "#request.customerId"),
                 @CacheEvict(
                         value = CacheConfig.ORDER_BY_CUSTOMER_CACHE,
+                        key = "#result.customer.id",
+                        condition = "#request.customerId != #result.customer.id"),
+                @CacheEvict(
+                        value = CacheConfig.CUSTOMERS_CACHE,
                         key = "#result.customer.id",
                         condition = "#request.customerId != #result.customer.id")
             })
@@ -154,7 +162,8 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.deleteById(id);
         log.info("Successfully deleted order with id: {}", id);
 
-        // Manually evict customer's order list cache
+        // Manually evict customer's order list cache and customer cache
         cacheService.evictCustomerOrders(customerId);
+        cacheService.evictCustomer(customerId);
     }
 }

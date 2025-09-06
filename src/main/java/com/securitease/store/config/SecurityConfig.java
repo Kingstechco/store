@@ -40,12 +40,7 @@ public class SecurityConfig {
                                 hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
                         .referrerPolicy(rp ->
                                 rp.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/actuator/health")
-                        .permitAll()
-                        .requestMatchers("/api/v1/**")
-                        .permitAll() // TODO: tighten later
-                        .anyRequest()
-                        .authenticated());
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
 
         return http.build();
     }

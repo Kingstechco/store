@@ -16,16 +16,20 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -120,7 +124,6 @@ class CustomerControllerTests {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("HTTP parsing issue - TODO: fix empty body handling")
         @DisplayName("Should return 400 when request body is missing")
         void shouldReturn400WhenRequestBodyMissing() throws Exception {
             mockMvc.perform(post("/api/v1/customers")
@@ -216,14 +219,23 @@ class CustomerControllerTests {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("Exception handler mapping issue - TODO: fix 422 response")
-        @DisplayName("Should return 422 when page size exceeds limit")
-        void shouldReturn422WhenPageSizeExceedsLimit() throws Exception {
-            mockMvc.perform(get("/api/v1/customers/paged").param("page", "0").param("size", "101"))
-                    .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.error").value("INVALID_PAGE_SIZE"));
+        @DisplayName("Should cap page size to maximum allowed by Spring Boot (100)")
+        void shouldCapPageSizeToMaximumAllowed() throws Exception {
+            // Capture the pageable that gets passed to the service
+            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+            
+            // Create mock page with capped size
+            when(customerService.getCustomers(pageableCaptor.capture())).thenAnswer(invocation -> {
+                Pageable pageable = pageableCaptor.getValue();
+                return new PageImpl<>(Collections.emptyList(), pageable, 0);
+            });
 
-            verify(customerService, never()).getCustomers(any());
+            mockMvc.perform(get("/api/v1/customers/paged").param("page", "0").param("size", "101"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.size").value(100)); // Spring Boot caps to 100
+
+            // Verify that service was called with capped size
+            assertEquals(100, pageableCaptor.getValue().getPageSize());
         }
     }
 

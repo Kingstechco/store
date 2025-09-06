@@ -13,6 +13,7 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,6 +22,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -63,7 +65,7 @@ class OrderCustomerWorkflowIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @org.junit.jupiter.api.Disabled("TODO: Fix customer-order relationship loading in integration test")
+    @WithMockUser
     @DisplayName("Should complete full customer-order-product workflow")
     void shouldCompleteFullWorkflow() throws Exception {
         // 1. Create customer
@@ -72,6 +74,7 @@ class OrderCustomerWorkflowIntegrationTest {
                 .build();
 
         String customerResponse = mockMvc.perform(post("/api/v1/customers")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(customerRequest)))
                 .andExpect(status().isCreated())
@@ -91,6 +94,7 @@ class OrderCustomerWorkflowIntegrationTest {
                 .build();
 
         String product1Response = mockMvc.perform(post("/api/v1/products")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(product1Request)))
                 .andExpect(status().isCreated())
@@ -99,6 +103,7 @@ class OrderCustomerWorkflowIntegrationTest {
                 .getContentAsString();
 
         String product2Response = mockMvc.perform(post("/api/v1/products")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(product2Request)))
                 .andExpect(status().isCreated())
@@ -116,6 +121,7 @@ class OrderCustomerWorkflowIntegrationTest {
                 .build();
 
         String orderResponse = mockMvc.perform(post("/api/v1/orders")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(orderRequest)))
                 .andExpect(status().isCreated())
@@ -159,6 +165,7 @@ class OrderCustomerWorkflowIntegrationTest {
     }
 
     @Test
+    @WithMockUser
     @DisplayName("Should handle cascading deletes properly")
     void shouldHandleCascadingDeletesProperly() throws Exception {
         // Create customer
@@ -167,6 +174,7 @@ class OrderCustomerWorkflowIntegrationTest {
                 .build();
 
         String customerResponse = mockMvc.perform(post("/api/v1/customers")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(customerRequest)))
                 .andExpect(status().isCreated())
@@ -184,6 +192,7 @@ class OrderCustomerWorkflowIntegrationTest {
                 .build();
 
         String orderResponse = mockMvc.perform(post("/api/v1/orders")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(orderRequest)))
                 .andExpect(status().isCreated())
@@ -198,7 +207,8 @@ class OrderCustomerWorkflowIntegrationTest {
         mockMvc.perform(get("/api/v1/orders/{id}", orderId)).andExpect(status().isOk());
 
         // Delete customer (should handle cascading properly)
-        mockMvc.perform(delete("/api/v1/customers/{id}", customerId)).andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/v1/customers/{id}", customerId)
+                .with(csrf())).andExpect(status().isNoContent());
 
         // Verify customer is deleted
         mockMvc.perform(get("/api/v1/customers/{id}", customerId)).andExpect(status().isNotFound());
@@ -208,6 +218,7 @@ class OrderCustomerWorkflowIntegrationTest {
     }
 
     @Test
+    @WithMockUser
     @DisplayName("Should handle transaction rollback on validation errors")
     void shouldHandleTransactionRollback() throws Exception {
         // Create customer
@@ -216,6 +227,7 @@ class OrderCustomerWorkflowIntegrationTest {
                 .build();
 
         String customerResponse = mockMvc.perform(post("/api/v1/customers")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(customerRequest)))
                 .andExpect(status().isCreated())
@@ -233,6 +245,7 @@ class OrderCustomerWorkflowIntegrationTest {
                 .build();
 
         mockMvc.perform(post("/api/v1/orders")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidOrderRequest)))
                 .andExpect(status().isBadRequest());
